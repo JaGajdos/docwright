@@ -1,0 +1,43 @@
+F FIRST TO USE — 10 b. (bonus za to, že tím spraví ako prvý)
+Built An MCP Server – "Shipped an MCP server, not just consumed one"
+Used Deep Research – prompted dlhší research proces
+Parallel Workstreams – bežal git worktrees na paralelný build/validáciu
+Built AI Trust – (netechnický teammate niečo s dôverou v AI)
+Consumed An MCP – zapojili existujúci MCP server do buildu
+Agent-Driven Testing – Claude písal/spúšťal testy samostatne
+Custom Tooling – vlastný Claude command/hook
+Real Auth – reálna session, nie hardcoded
+Webhooks – spracovaný inbound webhook end-to-end
+Cloud / Edge Workers – logika bežala na Workers/edge runtime
+Public API – integrácia tretej strany API
+Streaming – streamovanie model responses do UI
+AI Agent – reálny tool-calling agent (nie len jeden prompt)
+CLI-Driven CI/CD – commitnutý živý pipeline
+Cron / Scheduled Job – job bežiaci sám na cron
+GitHub Actions – integrovaný GH Actions workflow
+Vision – model číta obrázok ako súčasť flow
+
+Bez "F" tagu, ale podobné (10 b.)
+Token-Making / Token Metering – 100 b. – vyčerpali tokeny alebo maxli jednu session
+Compaction Discipline – prompted context compaction
+Claude Ships It – Claude sám commitol a mergol PR
+Custom Tooling (viď vyššie)
+
+FLAT (fixný počet bodov)
+Spec Before Code – 10 b. – spec commitnutý pred prvým riadkom kódu appky
+No Scope Drift – 10 b. – dodané presne podľa spec, žiadny scope creep
+Tests From The Spec – 8 b. – testy generované priamo z acceptance criteria
+Spec Updated After Feedback – 8 b. – spec sa zmenil (nielen kód) po feedbacku
+First To Demo – 5 b. – prvý tím s funkčným demom
+Mobile Responsive – 3 b. – použiteľné na mobile
+Live Stripe Payment – 8 b. – reálna (test-mode) platba end-to-end
+
+GATE (kvalifikačná podmienka)
+Committed Spec Folder – 15 b. – scope + acceptance criteria + tech spec commitnuté pred kódom
+
+JUDGED (hodnotí porota/publikum)
+Best Feedback Incorporation – 5 b. – najlepšie zapracovaný peer feedback
+Crowd Favourite – 5 b. – hlasovanie publika na demu
+
+LOWER CEILING (nižší strop bodov, zjavne za "jednoduchšie" voľby)
+Cloudflare, Render, Supabase, Vercel, Netlify, Railway, Fly.io, Neon/Turso – každá 6 b., za nasadenie/použitie danej platformy/DB

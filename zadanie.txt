@@ -1,0 +1,28 @@
+Docwright
+
+USE Spec-Driven Development (SDD)
+
+The docs your repo never got around to writing.
+
+Point Docwright at any public GitHub repo and it hands back a
+clean README and a one-screen architecture map — the
+onboarding doc every project deserves and almost none have.
+
+LAUNCHPAD
+
+Docwright — jump to exploration
+
+CLONES
+
+Mintlify · CodeRabbit-style doc tools
+
+REACH FOR
+
+GitHub MCP    AI agent    GitHub Actions    Public API
+
+QUICK START
+
+Connect the GitHub MCP, have the agent read one repo’s file tree,
+and generate a README from a template. Then ship it as a GitHub
+Action that comments on new PRs.
+
