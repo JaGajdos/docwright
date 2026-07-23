@@ -16,9 +16,9 @@
   --shadow: 0 18px 50px rgba(18, 40, 32, 0.08);
   --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   --font-body: "Figtree", system-ui, sans-serif;
-  --text: 1.35rem;
-  --text-lg: 1.5rem;
-  --text-sm: 1.15rem;
+  --text: 1.2rem;
+  --text-lg: 1.35rem;
+  --text-sm: 1.05rem;
 }
 
 * {
@@ -29,6 +29,10 @@ html,
 body {
   margin: 0;
   height: 100%;
+}
+
+html {
+  font-size: 93.75%; /* 15px base — one step down from 16px */
 }
 
 body {
@@ -95,7 +99,7 @@ body.is-loading .topbar {
 
 .brand {
   font-family: var(--font-display);
-  font-size: clamp(2.8rem, 5.5vw, 4rem);
+  font-size: clamp(2.4rem, 4.8vw, 3.4rem);
   font-weight: 800;
   letter-spacing: -0.045em;
   margin: 0;
@@ -107,9 +111,9 @@ body.is-loading .topbar {
 }
 
 .tagline {
-  margin: 0.65rem 0 0;
+  margin: 0.55rem 0 0;
   color: var(--muted);
-  font-size: clamp(1.2rem, 2.1vw, 1.4rem);
+  font-size: clamp(1.05rem, 1.85vw, 1.25rem);
   max-width: 38rem;
   line-height: 1.4;
   font-weight: 500;
@@ -154,8 +158,8 @@ input[type="text"] {
   background: transparent;
   color: var(--ink);
   border-radius: var(--radius-sm);
-  padding: 0.95rem 1.1rem;
-  font-size: 1.25rem;
+  padding: 0.85rem 1rem;
+  font-size: 1.15rem;
   font-weight: 500;
   outline: none;
 }
@@ -171,7 +175,7 @@ button[type="submit"] {
   background: var(--accent);
   color: #fff;
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   letter-spacing: -0.01em;
   padding: 0.95rem 1.55rem;
   cursor: pointer;
@@ -231,7 +235,7 @@ button[type="submit"]:disabled {
   gap: 0.35rem;
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--muted);
   transition: background 0.15s ease, color 0.15s ease;
@@ -280,7 +284,7 @@ button[type="submit"]:disabled {
 
 .pro-nudge p {
   margin: 0;
-  max-width: 46rem;
+  flex: 1 1 auto;
   line-height: 1.45;
 }
 
@@ -318,7 +322,7 @@ button[type="submit"]:disabled {
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0.45rem 0.85rem;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -446,14 +450,15 @@ button[type="submit"]:disabled {
 .loader-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-size: clamp(1.45rem, 2.6vw, 1.9rem);
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
 .loader-hint {
   margin: 0;
-  max-width: 30rem;
+  max-width: none;
+  width: min(48rem, 100%);
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: 1.5;
@@ -482,9 +487,9 @@ button[type="submit"]:disabled {
 }
 
 .doc-section-title {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.15rem;
   font-family: var(--font-display);
-  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-size: clamp(1.45rem, 2.6vw, 1.9rem);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--ink);
@@ -546,18 +551,18 @@ button[type="submit"]:disabled {
 }
 
 .prose h1 {
-  font-size: clamp(2.5rem, 4.4vw, 3.3rem);
-  margin: 0 0 1.15rem;
+  font-size: clamp(2.15rem, 3.8vw, 2.85rem);
+  margin: 0 0 1rem;
 }
 
 .prose h2 {
-  font-size: clamp(1.85rem, 3.1vw, 2.35rem);
-  margin: 2.35rem 0 1rem;
+  font-size: clamp(1.6rem, 2.7vw, 2.05rem);
+  margin: 2.1rem 0 0.9rem;
 }
 
 .prose h3 {
-  font-size: clamp(1.5rem, 2.3vw, 1.8rem);
-  margin: 1.85rem 0 0.8rem;
+  font-size: clamp(1.3rem, 2vw, 1.55rem);
+  margin: 1.6rem 0 0.7rem;
 }
 
 .prose p,
@@ -626,7 +631,8 @@ button[type="submit"]:disabled {
 
 .footer p {
   margin: 0;
-  max-width: 70rem;
+  max-width: none;
+  width: 100%;
   line-height: 1.45;
 }
 
@@ -647,7 +653,7 @@ button[type="submit"]:disabled {
 
 .upsell-kicker {
   margin: 0 0 0.35rem;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -657,14 +663,14 @@ button[type="submit"]:disabled {
 .upsell-title {
   margin: 0 0 0.5rem;
   font-family: var(--font-display);
-  font-size: clamp(1.55rem, 2.6vw, 2rem);
+  font-size: clamp(1.35rem, 2.3vw, 1.75rem);
   font-weight: 800;
   letter-spacing: -0.03em;
 }
 
 .upsell-text {
   margin: 0;
-  max-width: 40rem;
+  max-width: none;
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: 1.5;
@@ -698,14 +704,15 @@ button[type="submit"]:disabled {
 }
 
 .plans-intro {
-  max-width: 40rem;
+  max-width: none;
+  width: 100%;
   margin-bottom: 2rem;
 }
 
 .plans-intro h2 {
   margin: 0 0 0.65rem;
   font-family: var(--font-display);
-  font-size: clamp(1.85rem, 3.2vw, 2.4rem);
+  font-size: clamp(1.6rem, 2.8vw, 2.1rem);
   font-weight: 800;
   letter-spacing: -0.03em;
 }
@@ -736,7 +743,7 @@ button[type="submit"]:disabled {
 .plan h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.45rem;
+  font-size: 1.3rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -744,14 +751,14 @@ button[type="submit"]:disabled {
 .plan-price {
   margin: 0.55rem 0 0.25rem;
   font-family: var(--font-display);
-  font-size: 2.35rem;
+  font-size: 2.05rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
 }
 
 .plan-price span {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
   letter-spacing: 0;
@@ -782,7 +789,7 @@ button[type="submit"]:disabled {
   margin: auto 0 0;
   padding-top: 1.35rem;
   color: var(--muted);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
@@ -793,7 +800,7 @@ button[type="submit"]:disabled {
   border-radius: 999px;
   background: var(--accent-soft);
   color: var(--accent-strong);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -814,7 +821,7 @@ button[type="submit"]:disabled {
   background: var(--accent);
   color: #fff;
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   cursor: not-allowed;
   opacity: 0.72;
 }
@@ -887,13 +894,13 @@ button[type="submit"]:disabled {
   }
 
   input[type="text"] {
-    font-size: 1.3rem;
-    padding: 1.05rem 1.2rem;
+    font-size: 1.15rem;
+    padding: 0.95rem 1.1rem;
   }
 
   button[type="submit"] {
-    font-size: 1.2rem;
-    padding: 1.05rem 1.85rem;
+    font-size: 1.1rem;
+    padding: 0.95rem 1.7rem;
   }
 
   .error,
