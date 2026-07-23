@@ -34,16 +34,33 @@ export type AgentJson = {
 
 export function extractJsonObject(text: string): AgentJson | null {
   const trimmed = text.trim();
-  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fence ? fence[1].trim() : trimmed;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    return JSON.parse(candidate.slice(start, end + 1)) as AgentJson;
-  } catch {
-    return null;
+  if (!trimmed) return null;
+
+  const tryParse = (raw: string): AgentJson | null => {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start < 0 || end <= start) return null;
+    try {
+      return JSON.parse(raw.slice(start, end + 1)) as AgentJson;
+    } catch {
+      return null;
+    }
+  };
+
+  // 1) Prefer whole text — README often contains ```mermaid fences inside JSON strings.
+  //    A naive /```/ regex would steal the mermaid block and break parsing.
+  const direct = tryParse(trimmed);
+  if (direct?.readmeMarkdown) return direct;
+
+  // 2) Only strip an explicit ```json wrapper (not bare ``` / mermaid).
+  const jsonFence = trimmed.match(/^```json\s*([\s\S]*?)```\s*$/i);
+  if (jsonFence?.[1]) {
+    const fromFence = tryParse(jsonFence[1].trim());
+    if (fromFence?.readmeMarkdown) return fromFence;
   }
+
+  // 3) Last resort: first {...} span in the text
+  return tryParse(trimmed);
 }
 
 export function shouldForceFinal(input: {
