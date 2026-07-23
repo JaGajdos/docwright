@@ -1,6 +1,5 @@
-# Keep image small — frontend/action not needed at runtime
-apps/web
-action
+# Source for web/action is not COPY'd into the image (only package.json for workspaces).
+# Do not ignore those dirs entirely — npm ci needs their package.json in the build context.
 doc
 slices
 .git
@@ -8,6 +7,7 @@ slices
 **/node_modules
 **/dist
 **/*.test.ts
+**/*.test.js
 .env
 .env.*
 !.env.example
