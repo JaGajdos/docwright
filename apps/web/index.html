@@ -40,12 +40,31 @@
                 <option value="sk">SK</option>
               </select>
             </label>
+            <fieldset class="scan-mode" aria-label="Scan depth">
+              <legend class="sr-only">Scan depth</legend>
+              <label class="scan-option">
+                <input type="radio" name="scan" value="quick" checked />
+                <span>Quick scan</span>
+              </label>
+              <label class="scan-option scan-option--pro">
+                <input type="radio" name="scan" value="deep" />
+                <span>Deep scan <em>Pro</em></span>
+              </label>
+            </fieldset>
             <button type="button" id="demo" class="linkish">
               Try example repo
             </button>
           </div>
         </form>
       </header>
+
+      <div id="pro-nudge" class="pro-nudge" hidden>
+        <p>
+          <strong>Deep scan</strong> reads more of the repo (packages, entry
+          points, CI) and drafts richer docs — available on Pro.
+        </p>
+        <a class="pro-nudge-cta" href="#plans">See plans</a>
+      </div>
 
       <p id="status" class="status" hidden></p>
       <p id="error" class="error" role="alert" hidden></p>
@@ -79,7 +98,77 @@
             <ul id="warnings-list" class="warnings-list"></ul>
           </div>
         </article>
+
+        <aside class="upsell" aria-label="Upgrade scan">
+          <div class="upsell-copy">
+            <p class="upsell-kicker">Go deeper</p>
+            <h2 class="upsell-title">This was a Quick scan</h2>
+            <p class="upsell-text">
+              Free scans sample the tree and a few key files. Pro Deep scan
+              walks packages, apps, and CI so README and architecture match
+              larger monorepos.
+            </p>
+          </div>
+          <a class="upsell-cta" href="#plans">Unlock Deep scan</a>
+        </aside>
       </main>
+
+      <section id="plans" class="plans" aria-labelledby="plans-heading">
+        <div class="plans-intro">
+          <h2 id="plans-heading">How Docwright scales</h2>
+          <p>
+            Monetize depth and continuity — not just “another README.” Free
+            proves the product; Pro sells better scanning and always-on docs.
+          </p>
+        </div>
+
+        <div class="plans-grid">
+          <article class="plan">
+            <h3>Free</h3>
+            <p class="plan-price">€0</p>
+            <p class="plan-desc">Public repos, Quick scan</p>
+            <ul>
+              <li>Tree + a few key files</li>
+              <li>README + architecture map</li>
+              <li>Rate-limited generates</li>
+            </ul>
+            <p class="plan-foot">What you use today</p>
+          </article>
+
+          <article class="plan plan--featured">
+            <p class="plan-badge">Best fit</p>
+            <h3>Pro</h3>
+            <p class="plan-price">€29<span>/mo</span></p>
+            <p class="plan-desc">Deep project scanning</p>
+            <ul>
+              <li>Deep scan: more files &amp; packages</li>
+              <li>Larger repos without early cutoff</li>
+              <li>Private repos (GitHub App)</li>
+              <li>Custom prompt &amp; README template</li>
+              <li>Export + higher limits</li>
+            </ul>
+            <button type="button" class="plan-cta" id="plan-pro" disabled>
+              Coming soon
+            </button>
+          </article>
+
+          <article class="plan">
+            <h3>Team</h3>
+            <p class="plan-price">€99<span>/mo</span></p>
+            <p class="plan-desc">Docs that stay current</p>
+            <ul>
+              <li>Everything in Pro</li>
+              <li>PR Action on every merge</li>
+              <li>Docs drift alerts</li>
+              <li>Shared org templates</li>
+              <li>Priority model / queue</li>
+            </ul>
+            <button type="button" class="plan-cta plan-cta--ghost" disabled>
+              Coming soon
+            </button>
+          </article>
+        </div>
+      </section>
 
       <footer class="footer">
         <p>

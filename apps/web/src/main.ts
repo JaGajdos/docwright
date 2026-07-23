@@ -15,16 +15,34 @@ const statusEl = document.querySelector<HTMLParagraphElement>("#status")!;
 const warningsEl = document.querySelector<HTMLDivElement>("#warnings")!;
 const warningsList = document.querySelector<HTMLUListElement>("#warnings-list")!;
 const errorEl = document.querySelector<HTMLParagraphElement>("#error")!;
+const proNudge = document.querySelector<HTMLDivElement>("#pro-nudge")!;
 const results = document.querySelector<HTMLElement>("#results")!;
 const mermaidOut = document.querySelector<HTMLDivElement>("#mermaid-out")!;
 const mermaidFallback = document.querySelector<HTMLPreElement>("#mermaid-fallback")!;
 const readmeOut = document.querySelector<HTMLElement>("#readme-out")!;
+const scanRadios = document.querySelectorAll<HTMLInputElement>('input[name="scan"]');
 
 const DEMO_REPO = "https://github.com/sindresorhus/is";
 
 demoBtn.addEventListener("click", () => {
   repoInput.value = DEMO_REPO;
   repoInput.focus();
+});
+
+function selectedScan(): "quick" | "deep" {
+  const checked = document.querySelector<HTMLInputElement>(
+    'input[name="scan"]:checked',
+  );
+  return checked?.value === "deep" ? "deep" : "quick";
+}
+
+function syncProNudge(): void {
+  const deep = selectedScan() === "deep";
+  proNudge.hidden = !deep;
+}
+
+scanRadios.forEach((radio) => {
+  radio.addEventListener("change", syncProNudge);
 });
 
 function showError(message: string): void {
@@ -77,6 +95,11 @@ form.addEventListener("submit", async (ev) => {
   clearWarnings();
   setResultsVisible(false);
   setLoading(true);
+
+  // Deep scan is visual-only for now — always run Quick path.
+  if (selectedScan() === "deep") {
+    syncProNudge();
+  }
 
   try {
     const data = await generateDocs({
