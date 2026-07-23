@@ -20,6 +20,8 @@ describe("resolveMcpLaunchConfig", () => {
     delete process.env.DOCWRIGHT_MCP_ARGS;
     const cfg = resolveMcpLaunchConfig("tok");
     expect(cfg.args).toEqual(["stdio"]);
+    expect(cfg.env?.GITHUB_TOOLSETS).toBe("repos,git");
+    expect(cfg.env?.GITHUB_TOOLS).toContain("get_repository_tree");
     delete process.env.DOCWRIGHT_MCP_COMMAND;
   });
 });

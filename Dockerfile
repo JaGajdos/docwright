@@ -36,6 +36,8 @@ RUN curl -fsSL -o /tmp/mcp.tgz \
 ENV NODE_ENV=production \
     DOCWRIGHT_MCP_COMMAND=/usr/local/bin/github-mcp-server \
     DOCWRIGHT_MCP_ARGS='["stdio"]' \
+    GITHUB_TOOLSETS=repos,git \
+    GITHUB_TOOLS=get_repository_tree,get_file_contents \
     PORT=8080
 
 COPY --from=build /app /app

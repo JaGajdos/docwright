@@ -15,6 +15,13 @@ function envWithToken(token: string): Record<string, string> {
   }
   env.GITHUB_PERSONAL_ACCESS_TOKEN = token;
   env.GITHUB_TOKEN = token;
+  // get_repository_tree lives in `git` toolset (not in MCP defaults)
+  if (!env.GITHUB_TOOLSETS?.trim()) {
+    env.GITHUB_TOOLSETS = "repos,git";
+  }
+  if (!env.GITHUB_TOOLS?.trim()) {
+    env.GITHUB_TOOLS = "get_repository_tree,get_file_contents";
+  }
   return env;
 }
 
