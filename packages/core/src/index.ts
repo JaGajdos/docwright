@@ -36,8 +36,15 @@ export type { GenerateDocsInput } from "./agent/generateDocs.js";
 export { createGithubMcpSession, resolveMcpLaunchConfig } from "./mcp/session.js";
 export { withFileReadLimit } from "./mcp/types.js";
 export type { GithubMcpSession, McpToolName } from "./mcp/types.js";
-export { createLlmClient, resolveLlmModel, usesAzureOpenAI, usesResponsesApi } from "./agent/llmClient.js";
+export { createLlmClient, resolveLlmModel, usesAzureOpenAI, usesResponsesApi, createConfiguredLlmProvider } from "./agent/llmClient.js";
 export type { LlmClient } from "./agent/llmClient.js";
+export {
+  createLlmProvider,
+  createOpenAiProvider,
+  createOpenAiCompatibleProvider,
+  createAzureProvider,
+} from "./llm/index.js";
+export type { LlmProvider, LlmProviderId, CreateLlmProviderOptions } from "./llm/index.js";
 export { isDebugEnabled, debugLog, errorLog } from "./debug.js";
 export { validateMermaidFlowchart, sanitizeMermaidLabels } from "./agent/mermaid.js";
 

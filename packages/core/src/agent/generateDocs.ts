@@ -11,6 +11,7 @@ import {
   usesAzureOpenAI,
   usesResponsesApi,
   resolveLlmModel,
+  createConfiguredLlmProvider,
 } from "./llmClient.js";
 import { AgentLimitError, runDocwrightAgent } from "./runAgent.js";
 
@@ -37,13 +38,21 @@ export async function generateDocs(
   input: GenerateDocsInput,
 ): Promise<GenerateDocsOutput> {
   const t0 = Date.now();
+  const providerPreview = (() => {
+    try {
+      return createConfiguredLlmProvider();
+    } catch {
+      return null;
+    }
+  })();
   debugLog("generate", "start", {
     repo: input.repo,
     ref: input.ref,
     language: input.language,
-    llmApi: usesResponsesApi() ? "responses" : "chat",
+    llmProvider: providerPreview?.id ?? process.env.DOCWRIGHT_LLM_PROVIDER ?? "openai",
+    llmApi: providerPreview?.agentApi ?? (usesResponsesApi() ? "responses" : "chat"),
     azure: usesAzureOpenAI(),
-    model: resolveLlmModel(),
+    model: providerPreview?.model ?? resolveLlmModel(),
     apiVersion: process.env.AZURE_OPENAI_API_VERSION ?? null,
     endpointSet: Boolean(process.env.AZURE_OPENAI_ENDPOINT?.trim()),
   });

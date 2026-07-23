@@ -1,7 +1,10 @@
 import type { FunctionTool } from "openai/resources/responses/responses.js";
 import type { LimitedMcpSession } from "../mcp/types.js";
 import type { GenerateDocsOutput } from "../types.js";
-import { createLlmClient, resolveLlmModel, type LlmClient } from "./llmClient.js";
+import {
+  createConfiguredLlmProvider,
+} from "./llmClient.js";
+import type { LlmProvider } from "../llm/types.js";
 import { buildFinalInstruction, buildSystemPrompt, buildUserPrompt } from "./prompts.js";
 import {
   AgentLimitError,
@@ -102,10 +105,11 @@ function outputText(response: {
 export async function runDocwrightAgentResponses(
   session: LimitedMcpSession,
   input: AgentGenerateInput,
-  openai: LlmClient = createLlmClient(),
+  provider: Pick<LlmProvider, "client" | "model"> = createConfiguredLlmProvider(),
 ): Promise<GenerateDocsOutput> {
+  const openai = provider.client;
   const language = input.language ?? "en";
-  const model = resolveLlmModel();
+  const model = provider.model;
   const finalInstruction = buildFinalInstruction(input.prompts.final);
   const instructions = buildSystemPrompt(
     language,

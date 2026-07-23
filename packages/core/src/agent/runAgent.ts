@@ -7,9 +7,7 @@ import type { LimitedMcpSession } from "../mcp/types.js";
 import type { GenerateDocsOutput } from "../types.js";
 import { buildFinalInstruction, buildSystemPrompt, buildUserPrompt } from "./prompts.js";
 import {
-  createLlmClient,
-  resolveLlmModel,
-  usesResponsesApi,
+  createConfiguredLlmProvider,
   type LlmClient,
 } from "./llmClient.js";
 import {
@@ -80,8 +78,9 @@ function chatTemperature(fallback: number): number | undefined {
 async function runDocwrightAgentChat(
   session: LimitedMcpSession,
   input: AgentGenerateInput,
-  openai: LlmClient,
+  provider: { client: LlmClient; model: string },
 ): Promise<GenerateDocsOutput> {
+  const { client: openai, model } = provider;
   const language = input.language ?? "en";
   const finalInstruction = buildFinalInstruction(input.prompts.final);
   const messages: ChatCompletionMessageParam[] = [
@@ -137,7 +136,7 @@ async function runDocwrightAgentChat(
     }
 
     const completion = await openai.chat.completions.create({
-      model: resolveLlmModel(),
+      model,
       ...(chatTemperature(0.2) !== undefined
         ? { temperature: chatTemperature(0.2) }
         : {}),
@@ -149,7 +148,7 @@ async function runDocwrightAgentChat(
 
     const msg = completion.choices[0]?.message;
     if (!msg) {
-      throw new Error("Empty completion from OpenAI.");
+      throw new Error("Empty completion from LLM provider.");
     }
 
     const toolCalls =
@@ -271,11 +270,16 @@ export async function runDocwrightAgent(
   session: LimitedMcpSession,
   input: AgentGenerateInput,
 ): Promise<GenerateDocsOutput> {
-  const openai = createLlmClient();
-  if (usesResponsesApi()) {
+  const provider = createConfiguredLlmProvider();
+  debugLog("agent", "llm provider", {
+    id: provider.id,
+    model: provider.model,
+    agentApi: provider.agentApi,
+  });
+  if (provider.agentApi === "responses") {
     debugLog("agent", "using Responses API path");
-    return runDocwrightAgentResponses(session, input, openai);
+    return runDocwrightAgentResponses(session, input, provider);
   }
   debugLog("agent", "using Chat Completions path");
-  return runDocwrightAgentChat(session, input, openai);
+  return runDocwrightAgentChat(session, input, provider);
 }
