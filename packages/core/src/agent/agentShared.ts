@@ -5,6 +5,7 @@ import { summarizeReadme } from "../summarizeReadme.js";
 import {
   mermaidTextFallback,
   mermaidToArchitectureFile,
+  sanitizeMermaidLabels,
   validateMermaidFlowchart,
 } from "./mermaid.js";
 import { resolveLlmModel, type LlmClient } from "./llmClient.js";
@@ -123,7 +124,9 @@ export async function buildAgentOutput(
     warnings.push("Agent finished without get_repository_tree (unexpected).");
   }
 
-  let mermaid = (parsed.architectureMermaid ?? "").trim();
+  let mermaid = sanitizeMermaidLabels(
+    (parsed.architectureMermaid ?? "").trim(),
+  );
   let fallback: string | undefined;
   const check = validateMermaidFlowchart(mermaid);
   if (!check.ok) {

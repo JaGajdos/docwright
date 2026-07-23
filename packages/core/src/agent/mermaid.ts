@@ -13,7 +13,6 @@ export function validateMermaidFlowchart(source: string): MermaidCheck {
     return { ok: false, reason: "must start with flowchart/graph and direction" };
   }
   const nodeHits = text.match(/\b[A-Za-z][A-Za-z0-9_]*\b/g) ?? [];
-  // Rough: too many identifiers often means too many nodes — soft check via arrows
   const edges = (text.match(/-->|---|==>/g) ?? []).length;
   if (edges > 20) {
     return { ok: false, reason: "too many edges for one-screen map" };
@@ -22,6 +21,34 @@ export function validateMermaidFlowchart(source: string): MermaidCheck {
     return { ok: false, reason: "diagram too dense" };
   }
   return { ok: true };
+}
+
+/** Characters that break unquoted Mermaid node labels. */
+const LABEL_NEEDS_QUOTES = /[@/().:[\]\\|<>{}#&]|^\d|\s/;
+
+function quoteLabelIfNeeded(label: string): string {
+  const trimmed = label.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed;
+  }
+  if (!LABEL_NEEDS_QUOTES.test(trimmed)) return trimmed;
+  const escaped = trimmed.replace(/"/g, "#quot;");
+  return `"${escaped}"`;
+}
+
+/**
+ * Quote flowchart node labels that contain @ / . spaces etc.
+ * Example: Package[@sindresorhus/is] → Package["@sindresorhus/is"]
+ */
+export function sanitizeMermaidLabels(source: string): string {
+  return source.replace(
+    /\b([A-Za-z][\w]*)\[([^\]]+)\]/g,
+    (_full, id: string, label: string) =>
+      `${id}[${quoteLabelIfNeeded(label)}]`,
+  );
 }
 
 export function mermaidToArchitectureFile(mermaid: string): string {

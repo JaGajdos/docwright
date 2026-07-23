@@ -28,5 +28,6 @@ export type { GithubMcpSession, McpToolName } from "./mcp/types.js";
 export { createLlmClient, resolveLlmModel, usesAzureOpenAI, usesResponsesApi } from "./agent/llmClient.js";
 export type { LlmClient } from "./agent/llmClient.js";
 export { isDebugEnabled, debugLog, errorLog } from "./debug.js";
+export { validateMermaidFlowchart, sanitizeMermaidLabels } from "./agent/mermaid.js";
 
 export const DOCWRIGHT_CORE_VERSION = "0.1.0";

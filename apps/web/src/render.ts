@@ -4,12 +4,32 @@ import DOMPurify from "dompurify";
 
 let mermaidReady = false;
 
+/** Quote labels with @ / spaces so mermaid.render does not fail. */
+export function sanitizeMermaidLabels(source: string): string {
+  const needsQuotes = /[@/().:[\]\\|<>{}#&]|^\d|\s/;
+  const quote = (label: string): string => {
+    const t = label.trim();
+    if (
+      (t.startsWith('"') && t.endsWith('"')) ||
+      (t.startsWith("'") && t.endsWith("'"))
+    ) {
+      return t;
+    }
+    if (!needsQuotes.test(t)) return t;
+    return `"${t.replace(/"/g, "#quot;")}"`;
+  };
+  return source.replace(
+    /\b([A-Za-z][\w]*)\[([^\]]+)\]/g,
+    (_m, id: string, label: string) => `${id}[${quote(label)}]`,
+  );
+}
+
 function ensureMermaid(): void {
   if (mermaidReady) return;
   mermaid.initialize({
     startOnLoad: false,
     theme: "dark",
-    securityLevel: "strict",
+    securityLevel: "loose",
   });
   mermaidReady = true;
 }
@@ -23,7 +43,7 @@ export async function renderMermaid(
   fallbackEl.hidden = true;
   fallbackEl.textContent = "";
 
-  const trimmed = source.trim();
+  const trimmed = sanitizeMermaidLabels(source.trim());
   if (!trimmed) {
     fallbackEl.hidden = false;
     fallbackEl.textContent = "No architecture diagram returned.";
@@ -35,9 +55,12 @@ export async function renderMermaid(
     const id = `dw-${Date.now()}`;
     const { svg } = await mermaid.render(id, trimmed);
     target.innerHTML = svg;
-  } catch {
+  } catch (err) {
     fallbackEl.hidden = false;
-    fallbackEl.textContent = trimmed;
+    fallbackEl.textContent =
+      trimmed +
+      "\n\n---\nRender error: " +
+      (err instanceof Error ? err.message : String(err));
   }
 }
 
