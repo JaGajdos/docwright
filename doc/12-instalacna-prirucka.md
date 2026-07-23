@@ -322,11 +322,12 @@ Rýchla kontrola env (bez secretov):
 
 | Súbor | Účel |
 |-------|------|
-| [`Dockerfile`](../Dockerfile) | Railway image (API + MCP binárka) |
-| [`railway.toml`](../railway.toml) | Docker builder |
+| [`Dockerfile`](../Dockerfile) | Image API + MCP binárka (Railway / Fly / Render / …) |
+| [`railway.toml`](../railway.toml) | Len Railway Docker builder (inde sa ignoruje) |
 | [`.env.example`](../.env.example) | šablóna env |
 | [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml) | GitHub Pages |
 | [`.github/workflows/docwright-pr.yml`](../.github/workflows/docwright-pr.yml) | sticky PR Action |
 | [`action/`](../action/) | Action entrypoint |
+| [`09` §2.7](./09-nasadenie.md#27-iný-backend-host-nie-railway) | Výmena BE hostu (nie Railway) |
 
 **Stav:** prevádzková inštalačná príručka (hackathon / MVP).

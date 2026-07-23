@@ -15,7 +15,7 @@ Zdroj zadania: [`../zadanie.txt`](../zadanie.txt)
 | [06-dorucenie-action-api.md](./06-dorucenie-action-api.md) | Action → Railway API + sticky PR komentár |
 | [07-sutaz-body-mapovanie.md](./07-sutaz-body-mapovanie.md) | Mapovanie `body.txt` bodov na Docwright (súťaž) |
 | [08-web-app.md](./08-web-app.md) | Web produkt: URL → README + mapa (bez login) |
-| [09-nasadenie.md](./09-nasadenie.md) | Deploy + inštalácia: Pages + Railway (env/secrets, LLM/MCP) |
+| [09-nasadenie.md](./09-nasadenie.md) | Deploy + inštalácia: Pages + Railway (env/secrets, LLM/MCP); **§2.7 iný BE host** |
 | [10-prevadzka-mvp.md](./10-prevadzka-mvp.md) | Stack, pluggable LLM, rate limit, chyby, Action, testy, disclaimer |
 | [11-implementacne-rozhodnutia.md](./11-implementacne-rozhodnutia.md) | Template, agent loop, MCP registry, LLM providers, mermaid, sticky API |
 | [12-instalacna-prirucka.md](./12-instalacna-prirucka.md) | **Inštalačná príručka** — kroky, secrets, Azure, troubleshooting |

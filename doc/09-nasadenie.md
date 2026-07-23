@@ -23,8 +23,10 @@ Architektúra: Agent + GitHub MCP beží na **Railway** ([`04`](./04-ziskanie-ob
 | Komponent | Hosting | Default URL |
 |-----------|---------|-------------|
 | Frontend | **GitHub Pages** | `https://<user>.github.io/<repo>/` |
-| Backend (Agent+MCP) | **Railway** | `https://<service>.up.railway.app` |
+| Backend (Agent+MCP) | **Railway** (default MVP) | `https://<service>.up.railway.app` |
 | Custom doména | **Nie** (MVP) | — |
+
+> **Portabilita BE:** Railway **nie je** natvrdo v aplikačnom kóde. API je bežný Node/Hono server (`PORT`) + `Dockerfile`. Web a Action berú len URL z env (`VITE_API_URL`, `DOCWRIGHT_API_URL`). Rovnaký image ide na Fly.io, Render, Cloud Run, VPS, … — pozri §2.7.
 
 ---
 
@@ -78,6 +80,24 @@ Limity + prompty: [`config/`](../config/) — detail v [`12`](./12-instalacna-pr
 ### 2.6 Networking
 - Public HTTPS URL (Railway default).
 - Timeout služby dostatočný na sync generate (120 s).
+
+### 2.7 Iný backend host (nie Railway)
+
+Aplikačný kód **neviaže** Docwright na Railway (žiadny Railway SDK, žiadna hardcodovaná `*.up.railway.app` URL).
+
+| Čo | Prenosné |
+|----|----------|
+| Runtime | `Dockerfile` alebo `npm run start` + Node 20 |
+| Konfig | tie isté env ako §2.3 |
+| Klienti | `VITE_API_URL` / `DOCWRIGHT_API_URL` = nová public HTTPS base URL |
+| CORS | `CORS_ORIGINS` = Pages origin |
+| `railway.toml` | len pre Railway; inde sa ignoruje |
+
+**Požiadavky na host:**
+1. **Dlhé sync HTTP** (~60–120 s) — serverless s krátkym timeoutom (typický edge / krátky function limit) je nevhodný.
+2. **Child process** — GitHub MCP beží ako stdio child vedľa API (container / VM; nie „pure“ edge bez process spawn).
+
+Príklady: Fly.io, Render, Google Cloud Run, Azure Container Apps, vlastný VPS. Po deployi prepíš `VITE_API_URL`, `DOCWRIGHT_API_URL`, `CORS_ORIGINS` a redeploy Pages / Action secrets.
 
 ---
 
@@ -197,8 +217,8 @@ jobs:
 
 | # | Rozhodnutie |
 |---|-------------|
-| 1 | Backend: **Railway** (Agent + MCP + API) |
+| 1 | Backend default: **Railway** (Agent + MCP + API); **nie** hardcodované — iný host podľa §2.7 |
 | 2 | Frontend: **GitHub Pages** |
 | 3 | Default URL len |
-| 4 | Action → Railway (žiadny samostatný OpenAI v Action) |
+| 4 | Action → backend API URL (žiadny samostatný OpenAI v Action) |
 | 5 | Inštalačné kroky §2–§4 sú súčasť spec |

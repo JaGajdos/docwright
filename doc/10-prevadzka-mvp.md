@@ -162,12 +162,13 @@ jobs:
 
 | Miesto | Úloha |
 |--------|--------|
-| **Railway** | **Povinné:** MCP provider + AI agent + LLM — každý generate z webu/API/Action |
+| **API host** (default **Railway**) | MCP provider + AI agent + LLM — každý generate z webu/API/Action |
 | GitHub Pages | Len UI |
 | Action runner | Len HTTP klient + PR komentár |
-| Cursor (optional) | Lokálny vývoj / demo s MCP — nie náhrada Railway |
+| Cursor (optional) | Lokálny vývoj / demo s MCP — nie náhrada API hostu |
 
-Zadanie „Connect the GitHub MCP…“ = implementované **na Railway**, nie len v dokumentácii.
+Railway je **default MVP hosting**, nie väzba v kóde — výmena hostu: [`09` §2.7](./09-nasadenie.md#27-iný-backend-host-nie-railway).  
+Zadanie „Connect the GitHub MCP…“ = implementované **na API hoste** (Agent+MCP), nie len v dokumentácii.
 
 ---
 
@@ -259,7 +260,7 @@ SK variant (ak `output_language=sk` / UI SK):
 | 4 | Chyby/UX: tabuľka §4 |
 | 5 | Health endpoint: **nie** |
 | 6 | Action: workflow + `DOCWRIGHT_API_URL` / `DOCWRIGHT_API_KEY` |
-| 7 | **Agent + MCP beží na Railway** (web + API + Action generate) |
+| 7 | **Agent + MCP beží na API hoste** (default Railway; portabilné — `09` §2.7) |
 | 8 | MCP: **provider registry** (default `github`); výber podľa URL hostu |
 | 9 | Testy: Vitest, základné zo spec |
 | 10 | Prevádzka: nie; LLM limity áno |

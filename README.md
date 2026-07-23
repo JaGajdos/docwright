@@ -40,11 +40,12 @@ MCP: host from URL → registry (default `github`) — [`packages/core/src/mcp/R
 
 Krok za krokom (Azure, Railway, Pages, secrets): **[`doc/12-instalacna-prirucka.md`](./doc/12-instalacna-prirucka.md)**
 
-- Backend: Railway (`Dockerfile` / `railway.toml`) — Agent + MCP
+- Backend: Railway (`Dockerfile` / `railway.toml`) — Agent + MCP  
+  *(Railway nie je v kóde natvrdo — iný host: [`doc/09` §2.7](./doc/09-nasadenie.md#27-iný-backend-host-nie-railway))*
 - Frontend: GitHub Pages (`.github/workflows/deploy-pages.yml`)
 - Action example: `.github/workflows/docwright-pr.yml`
 
-Secrets: LLM + GitHub MCP token **only on Railway**. Action needs `DOCWRIGHT_API_URL` + `DOCWRIGHT_API_KEY`.
+Secrets: LLM + GitHub MCP token **only on the API host**. Action needs `DOCWRIGHT_API_URL` + `DOCWRIGHT_API_KEY`.
 
 ## Spec
 
