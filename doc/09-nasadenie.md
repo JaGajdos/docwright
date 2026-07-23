@@ -1,6 +1,7 @@
 # Nasadenie + inštalácia (GitHub Pages + Railway)
 
 Špecifikácia deployu a **čo nakonfigurovať** na GitHub a Railway.  
+**Krok-za-krokom postup (hackathon):** [`12-instalacna-prirucka.md`](./12-instalacna-prirucka.md).  
 Architektúra: Agent + GitHub MCP beží na **Railway** ([`04`](./04-ziskanie-obsahu-github.md)).
 
 ---

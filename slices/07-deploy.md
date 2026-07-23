@@ -30,4 +30,4 @@
 3. Push na `main` → Pages deploy; otvor PR → sticky comment.
 
 ## Spec
-`doc/09` celý
+`doc/09` celý · **postup:** [`doc/12-instalacna-prirucka.md`](../doc/12-instalacna-prirucka.md)

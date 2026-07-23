@@ -34,6 +34,8 @@ npm run generate -- owner/repo
 
 ## Deploy
 
+Krok za krokom (Azure, Railway, Pages, secrets): **[`doc/12-instalacna-prirucka.md`](./doc/12-instalacna-prirucka.md)**
+
 - Backend: Railway (`Dockerfile` / `railway.toml`) — Agent + MCP
 - Frontend: GitHub Pages (`.github/workflows/deploy-pages.yml`)
 - Action example: `.github/workflows/docwright-pr.yml`
