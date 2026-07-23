@@ -4,16 +4,25 @@ import type {
   ChatCompletionToolChoiceOption,
 } from "openai/resources/chat/completions";
 import type { LimitedMcpSession } from "../mcp/types.js";
-import type { DocwrightLimits, GenerateDocsOutput, RepoRef } from "../types.js";
-import { buildPrCommentMarkdown } from "../prComment.js";
-import { summarizeReadme } from "../summarizeReadme.js";
-import {
-  mermaidTextFallback,
-  mermaidToArchitectureFile,
-  validateMermaidFlowchart,
-} from "./mermaid.js";
+import type { GenerateDocsOutput } from "../types.js";
 import { buildSystemPrompt, buildUserPrompt } from "./prompts.js";
-import { createLlmClient, resolveLlmModel, type LlmClient } from "./llmClient.js";
+import {
+  createLlmClient,
+  resolveLlmModel,
+  usesResponsesApi,
+  type LlmClient,
+} from "./llmClient.js";
+import {
+  AgentLimitError,
+  buildAgentOutput,
+  extractJsonObject,
+  shouldForceFinal,
+  type AgentGenerateInput,
+} from "./agentShared.js";
+import { runDocwrightAgentResponses } from "./runAgentResponses.js";
+
+export type { AgentGenerateInput } from "./agentShared.js";
+export { AgentLimitError } from "./agentShared.js";
 
 const ALLOWED_TOOLS = new Set(["get_repository_tree", "get_file_contents"]);
 
@@ -57,186 +66,23 @@ const openAiTools: ChatCompletionTool[] = [
   },
 ];
 
-export type AgentGenerateInput = RepoRef & {
-  language?: string;
-  template: string;
-  limits: DocwrightLimits;
-  sha?: string;
-};
+const FINAL_JSON_INSTRUCTION =
+  "STOP calling tools. Based only on tool results already in this conversation, respond with ONLY one JSON object (no markdown fences) with keys: readmeMarkdown, architectureMermaid, architectureMarkdownFile, warnings. Fill the README template as best you can; use \"_Not detected from repo._\" where unknown.";
 
-export class AgentLimitError extends Error {
-  readonly code = "AGENT_LIMIT";
-  constructor(message: string) {
-    super(message);
-    this.name = "AgentLimitError";
-  }
-}
-
-type AgentJson = {
-  readmeMarkdown?: string;
-  architectureMermaid?: string;
-  architectureMarkdownFile?: string;
-  warnings?: string[];
-};
-
-function extractJsonObject(text: string): AgentJson | null {
-  const trimmed = text.trim();
-  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fence ? fence[1].trim() : trimmed;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    return JSON.parse(candidate.slice(start, end + 1)) as AgentJson;
-  } catch {
-    return null;
-  }
-}
-
-function getOpenAI(): LlmClient {
-  return createLlmClient();
-}
-
-function modelName(): string {
-  return resolveLlmModel();
-}
-
-/** Some Azure deployments reject custom temperature — omit unless set. */
 function chatTemperature(fallback: number): number | undefined {
   const raw = process.env.OPENAI_TEMPERATURE?.trim();
   if (raw !== undefined && raw !== "") {
     const n = Number(raw);
     return Number.isFinite(n) ? n : fallback;
   }
-  if (
-    process.env.AZURE_OPENAI_ENDPOINT?.trim() ||
-    process.env.OPENAI_BASE_URL?.trim()
-  ) {
-    return undefined;
-  }
   return fallback;
 }
 
-const FINAL_JSON_INSTRUCTION =
-  "STOP calling tools. Based only on tool results already in this conversation, respond with ONLY one JSON object (no markdown fences) with keys: readmeMarkdown, architectureMermaid, architectureMarkdownFile, warnings. Fill the README template as best you can; use \"_Not detected from repo._\" where unknown.";
-
-async function repairMermaid(
-  openai: LlmClient,
-  broken: string,
-): Promise<string | null> {
-  const completion = await openai.chat.completions.create({
-    model: modelName(),
-    ...(chatTemperature(0) !== undefined
-      ? { temperature: chatTemperature(0) }
-      : {}),
-    messages: [
-      {
-        role: "system",
-        content:
-          "Fix the Mermaid flowchart. Return ONLY raw mermaid starting with flowchart TB or LR. No fences. Max 12 nodes.",
-      },
-      { role: "user", content: broken },
-    ],
-  });
-  const text = completion.choices[0]?.message?.content?.trim();
-  if (!text) return null;
-  const cleaned = text.replace(/^```(?:mermaid)?\s*|\s*```$/g, "").trim();
-  return validateMermaidFlowchart(cleaned).ok ? cleaned : null;
-}
-
-async function buildOutput(
-  openai: LlmClient,
-  parsed: AgentJson,
-  input: AgentGenerateInput,
-  calledTree: boolean,
-  warnings: string[],
-  session: LimitedMcpSession,
-): Promise<GenerateDocsOutput> {
-  if (!calledTree) {
-    warnings.push("Agent finished without get_repository_tree (unexpected).");
-  }
-
-  let mermaid = (parsed.architectureMermaid ?? "").trim();
-  let fallback: string | undefined;
-  const check = validateMermaidFlowchart(mermaid);
-  if (!check.ok) {
-    const repaired = await repairMermaid(
-      openai,
-      mermaid || "flowchart TB\n  A[App]",
-    );
-    if (repaired) {
-      mermaid = repaired;
-      warnings.push(`Mermaid repaired after: ${check.reason}`);
-    } else {
-      fallback = mermaidTextFallback(mermaid);
-      warnings.push(`Mermaid fallback after: ${check.reason}`);
-      mermaid = "";
-    }
-  }
-
-  const architectureMarkdownFile =
-    parsed.architectureMarkdownFile?.trim() ||
-    (mermaid
-      ? mermaidToArchitectureFile(mermaid)
-      : `# Architecture\n\n${fallback ?? "_Not detected from repo._"}\n`);
-
-  let readme = parsed.readmeMarkdown ?? "";
-  if (readme.includes("{{architecture_map}}")) {
-    const block = mermaid
-      ? `\`\`\`mermaid\n${mermaid}\n\`\`\``
-      : (fallback ?? "_Not detected from repo._");
-    readme = readme.replace("{{architecture_map}}", block);
-  }
-
-  const allWarnings = [
-    ...warnings,
-    ...(parsed.warnings ?? []),
-    ...session.getWarnings(),
-  ];
-
-  const readmeSummary = summarizeReadme(readme);
-  const prCommentMarkdown = buildPrCommentMarkdown({
-    architectureMermaid: mermaid || undefined,
-    architectureFallbackText: fallback,
-    readmeSummary,
-    sha: input.sha,
-  });
-
-  return {
-    readmeMarkdown: readme,
-    architectureMermaid: mermaid,
-    architectureMarkdownFile,
-    architectureFallbackText: fallback,
-    warnings: [...new Set(allWarnings)],
-    prCommentMarkdown,
-  };
-}
-
-/**
- * After enough exploration (or near round budget), stop tools and demand JSON.
- */
-function shouldForceFinal(input: {
-  round: number;
-  maxRounds: number;
-  calledTree: boolean;
-  filesRead: number;
-  maxFiles: number;
-}): boolean {
-  const { round, maxRounds, calledTree, filesRead, maxFiles } = input;
-  const remaining = maxRounds - round;
-  // Always reserve last rounds for a text/JSON answer
-  if (remaining <= 3) return true;
-  if (!calledTree) return false;
-  if (filesRead >= Math.min(6, maxFiles)) return true;
-  if (round >= 8) return true;
-  return false;
-}
-
-export async function runDocwrightAgent(
+async function runDocwrightAgentChat(
   session: LimitedMcpSession,
   input: AgentGenerateInput,
+  openai: LlmClient,
 ): Promise<GenerateDocsOutput> {
-  const openai = getOpenAI();
   const language = input.language ?? "en";
   const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: buildSystemPrompt(language) },
@@ -272,31 +118,21 @@ export async function runDocwrightAgent(
 
     let toolChoice: ChatCompletionToolChoiceOption = "auto";
     if (!forceFinal) {
-      if (round === 0) {
-        toolChoice = {
-          type: "function",
-          function: { name: "get_repository_tree" },
-        };
-      } else {
-        toolChoice = "auto";
-      }
+      toolChoice =
+        round === 0
+          ? { type: "function", function: { name: "get_repository_tree" } }
+          : "auto";
     }
 
     const completion = await openai.chat.completions.create({
-      model: modelName(),
+      model: resolveLlmModel(),
       ...(chatTemperature(0.2) !== undefined
         ? { temperature: chatTemperature(0.2) }
         : {}),
       messages,
       ...(forceFinal
-        ? {
-            // No tools — model must answer with JSON text
-            response_format: { type: "json_object" as const },
-          }
-        : {
-            tools: openAiTools,
-            tool_choice: toolChoice,
-          }),
+        ? { response_format: { type: "json_object" as const } }
+        : { tools: openAiTools, tool_choice: toolChoice }),
     });
 
     const msg = completion.choices[0]?.message;
@@ -394,7 +230,7 @@ export async function runDocwrightAgent(
       continue;
     }
 
-    return buildOutput(
+    return buildAgentOutput(
       openai,
       parsed,
       input,
@@ -407,4 +243,15 @@ export async function runDocwrightAgent(
   throw new AgentLimitError(
     `Agent exceeded max_tool_rounds (${input.limits.maxToolRounds}) without final README.`,
   );
+}
+
+export async function runDocwrightAgent(
+  session: LimitedMcpSession,
+  input: AgentGenerateInput,
+): Promise<GenerateDocsOutput> {
+  const openai = createLlmClient();
+  if (usesResponsesApi()) {
+    return runDocwrightAgentResponses(session, input, openai);
+  }
+  return runDocwrightAgentChat(session, input, openai);
 }

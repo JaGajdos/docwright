@@ -37,9 +37,12 @@ Z tímového / Azure portálu (príklad Aston):
 | Parameter | Príklad |
 |-----------|---------|
 | Endpoint | `https://aston-hct.openai.azure.com` |
-| API version | `2024-04-01-preview` |
-| Deployment | `T1-gpt-5.6-terra` |
+| API (Responses) | `POST …/openai/responses?api-version=2025-04-01-preview` |
+| API version | `2025-04-01-preview` |
+| Deployment / model | `T1-gpt-5.6-terra` |
 | API key | z Azure / tímového dashboardu |
+
+> Docwright na Railway pri Azure používa **Responses API** (nie chat/completions) — rovnaký endpoint ako tvoj working curl.
 
 > **Nie** z [platform.openai.com](https://platform.openai.com) — to je iný produkt (public OpenAI).  
 > Bez `AZURE_OPENAI_ENDPOINT` na Railway ide kód na `api.openai.com` → chyba **401 Incorrect API key**.
@@ -97,7 +100,7 @@ Po pridaní / zmene premenných: ak je banner **staged changes** → klikni **De
 |----------|-----------------|
 | `OPENAI_API_KEY` | Azure API key |
 | `AZURE_OPENAI_ENDPOINT` | `https://aston-hct.openai.azure.com` |
-| `AZURE_OPENAI_API_VERSION` | `2024-04-01-preview` |
+| `AZURE_OPENAI_API_VERSION` | `2025-04-01-preview` |
 | `AZURE_OPENAI_DEPLOYMENT` | `T1-gpt-5.6-terra` |
 
 #### Povinné — GitHub MCP + API
