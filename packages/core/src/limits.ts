@@ -20,13 +20,13 @@ export function getLimits(
   overrides: Partial<DocwrightLimits> = {},
 ): DocwrightLimits {
   return {
-    maxFilesRead: overrides.maxFilesRead ?? intEnv("DOCWRIGHT_MAX_FILES_READ", 25),
+    maxFilesRead: overrides.maxFilesRead ?? intEnv("DOCWRIGHT_MAX_FILES_READ", 8),
     maxFileBytes:
-      overrides.maxFileBytes ?? intEnv("DOCWRIGHT_MAX_FILE_BYTES", 100_000),
+      overrides.maxFileBytes ?? intEnv("DOCWRIGHT_MAX_FILE_BYTES", 40_000),
     maxTotalBytes:
-      overrides.maxTotalBytes ?? intEnv("DOCWRIGHT_MAX_TOTAL_BYTES", 800_000),
+      overrides.maxTotalBytes ?? intEnv("DOCWRIGHT_MAX_TOTAL_BYTES", 200_000),
     maxToolRounds:
-      overrides.maxToolRounds ?? intEnv("DOCWRIGHT_MAX_TOOL_ROUNDS", 12),
+      overrides.maxToolRounds ?? intEnv("DOCWRIGHT_MAX_TOOL_ROUNDS", 8),
     treeRecursive:
       overrides.treeRecursive ?? boolEnv("DOCWRIGHT_TREE_RECURSIVE", true),
     maxArchitectureNodes:

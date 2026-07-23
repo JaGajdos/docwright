@@ -279,6 +279,7 @@ Rýchla kontrola env (bez secretov):
 | `MCP error … Connection closed` | MCP binárka / `stdio` / token | Skontroluj `GITHUB_TOKEN`, `DOCWRIGHT_MCP_*`; redeploy |
 | `unknown tool "get_repository_tree"` | Toolset `git` nie je zapnutý | `GITHUB_TOOLSETS=repos,git` + `GITHUB_TOOLS=get_repository_tree,get_file_contents` |
 | `AGENT_LIMIT` / bez finálneho README | Model donekonečna volá tools | Opravené vo force-final agent loop; pull latest `main` a redeploy |
+| Azure `429` rate limit na veľkých repách (napr. React) | Veľa LLM roundov + obrovský tree | Defaults: max 8 rounds / 8 files; tree truncate; skôr final. Počkať minútu. Repo: `facebook/react` (nie `react/react`) |
 | Build: `apps/web/package.json not found` | `.dockerignore` vylúčil web | Opravené v repo; pull latest `main` |
 | Len `*.railway.internal` | Nie je public domain | Generate Domain, port 8080 |
 | CORS v browsri | `CORS_ORIGINS` ≠ Pages origin | Nastav `https://<user>.github.io` |

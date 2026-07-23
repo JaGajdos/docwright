@@ -11,6 +11,10 @@ import {
   shouldForceFinal,
 } from "./agentShared.js";
 import { debugLog, errorLog } from "../debug.js";
+import {
+  maxFileToolsPerRound,
+  truncateToolResult,
+} from "./toolResultBudget.js";
 
 const responseTools: FunctionTool[] = [
   {
@@ -117,6 +121,7 @@ export async function runDocwrightAgentResponses(
   });
 
   let calledTree = false;
+  let largeTree = false;
   const warnings = [...session.getWarnings()];
   let previousResponseId: string | undefined;
   let nextInput: string | Array<Record<string, unknown>> = userPrompt;
@@ -130,6 +135,7 @@ export async function runDocwrightAgentResponses(
       calledTree,
       filesRead: session.getFilesReadCount(),
       maxFiles: input.limits.maxFilesRead,
+      largeTree,
     });
 
     // Only inject "final JSON" user text when we are NOT still holding
@@ -233,6 +239,8 @@ export async function runDocwrightAgentResponses(
       });
 
       const toolOutputs: ToolOutputItem[] = [];
+      const maxFilesThisRound = maxFileToolsPerRound();
+      let filesThisRound = 0;
 
       for (const call of functionCalls) {
         const name = call.name;
@@ -263,8 +271,24 @@ export async function runDocwrightAgentResponses(
             args.recursive = input.limits.treeRecursive;
           }
         }
-        if (name === "get_file_contents" && input.ref && args.ref === undefined) {
-          args.ref = input.ref;
+        if (name === "get_file_contents") {
+          if (filesThisRound >= maxFilesThisRound) {
+            toolOutputs.push({
+              type: "function_call_output",
+              call_id: call.call_id,
+              output: JSON.stringify({
+                skipped: true,
+                message:
+                  "File-read budget for this turn reached. Stop tools and return final JSON now.",
+              }),
+            });
+            askForJson = true;
+            continue;
+          }
+          filesThisRound += 1;
+          if (input.ref && args.ref === undefined) {
+            args.ref = input.ref;
+          }
         }
 
         const result = await session.callTool(
@@ -282,6 +306,17 @@ export async function runDocwrightAgentResponses(
           warnings.push(`Truncated ${String(args.path)}`);
         }
 
+        const capped = truncateToolResult(name, text);
+        text = capped.text;
+        if (capped.truncated) {
+          warnings.push(`Truncated tool result: ${name}`);
+          if (name === "get_repository_tree") {
+            largeTree = true;
+            askForJson = true;
+            warnings.push("Large repository tree — forcing early final JSON.");
+          }
+        }
+
         toolOutputs.push({
           type: "function_call_output",
           call_id: call.call_id,
@@ -293,7 +328,6 @@ export async function runDocwrightAgentResponses(
       nextInput = toolOutputs;
       pendingToolOutputs = true;
 
-      // After this tool batch, prefer ending on the next turn
       if (
         shouldForceFinal({
           round: round + 1,
@@ -301,6 +335,7 @@ export async function runDocwrightAgentResponses(
           calledTree,
           filesRead: session.getFilesReadCount(),
           maxFiles: input.limits.maxFilesRead,
+          largeTree,
         })
       ) {
         askForJson = true;

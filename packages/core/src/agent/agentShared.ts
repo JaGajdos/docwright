@@ -8,8 +8,7 @@ import {
   sanitizeMermaidLabels,
   validateMermaidFlowchart,
 } from "./mermaid.js";
-import { resolveLlmModel, type LlmClient } from "./llmClient.js";
-import { usesAzureOpenAI } from "./llmClient.js";
+import { type LlmClient } from "./llmClient.js";
 
 export type AgentGenerateInput = RepoRef & {
   language?: string;
@@ -70,45 +69,31 @@ export function shouldForceFinal(input: {
   calledTree: boolean;
   filesRead: number;
   maxFiles: number;
+  largeTree?: boolean;
 }): boolean {
-  const { round, maxRounds, calledTree, filesRead, maxFiles } = input;
+  const { round, maxRounds, calledTree, filesRead, maxFiles, largeTree } =
+    input;
   const remaining = maxRounds - round;
-  if (remaining <= 3) return true;
+  // Reserve last rounds for JSON-only answer
+  if (remaining <= 2) return true;
   if (!calledTree) return false;
-  if (filesRead >= Math.min(6, maxFiles)) return true;
-  if (round >= 8) return true;
+  // Large repos: finish ASAP after tree (+ maybe 1–2 files)
+  if (largeTree && filesRead >= 2) return true;
+  if (largeTree && round >= 3) return true;
+  // Small repos: a few key files is enough
+  if (filesRead >= Math.min(3, maxFiles)) return true;
+  if (round >= 5) return true;
   return false;
 }
 
 async function repairMermaid(
-  openai: LlmClient,
+  _openai: LlmClient,
   broken: string,
 ): Promise<string | null> {
-  const model = resolveLlmModel();
-  const prompt =
-    "Fix the Mermaid flowchart. Return ONLY raw mermaid starting with flowchart TB or LR. No fences. Max 12 nodes.";
-
-  let text: string | undefined;
-  if (usesAzureOpenAI()) {
-    const response = await openai.responses.create({
-      model,
-      instructions: prompt,
-      input: broken,
-    });
-    text = response.output_text?.trim();
-  } else {
-    const completion = await openai.chat.completions.create({
-      model,
-      messages: [
-        { role: "system", content: prompt },
-        { role: "user", content: broken },
-      ],
-    });
-    text = completion.choices[0]?.message?.content?.trim();
-  }
-
-  if (!text) return null;
-  const cleaned = text.replace(/^```(?:mermaid)?\s*|\s*```$/g, "").trim();
+  // No extra LLM call (saves Azure rate limit). Try label sanitization only.
+  const cleaned = sanitizeMermaidLabels(
+    broken.replace(/^```(?:mermaid)?\s*|\s*```$/g, "").trim(),
+  );
   return validateMermaidFlowchart(cleaned).ok ? cleaned : null;
 }
 

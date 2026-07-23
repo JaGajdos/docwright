@@ -20,7 +20,9 @@ Rules:
 - architectureMermaid must be a flowchart (TB or LR), max 12 nodes.
 - If Mermaid would be invalid, still return best-effort mermaid; server may retry/fix.
 - Prefer reading README, manifests (package.json, etc.), and entry points before other files.
-- After the tree and a few key files (about 3–6), STOP tools and emit the final JSON.
+- For large repositories: after the tree, read at most 2–3 key files (README + package manifest + one entry), then STOP tools and emit final JSON.
+- Never browse dozens of files. Huge trees are truncated server-side — work with what you get.
+- After the tree and a few key files, STOP tools and emit the final JSON.
 - Do not keep browsing indefinitely.`;
 }
 

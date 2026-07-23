@@ -21,6 +21,7 @@ import {
 } from "./agentShared.js";
 import { runDocwrightAgentResponses } from "./runAgentResponses.js";
 import { debugLog } from "../debug.js";
+import { truncateToolResult } from "./toolResultBudget.js";
 
 export type { AgentGenerateInput } from "./agentShared.js";
 export { AgentLimitError } from "./agentShared.js";
@@ -99,6 +100,7 @@ async function runDocwrightAgentChat(
   ];
 
   let calledTree = false;
+  let largeTree = false;
   const warnings = [...session.getWarnings()];
   let forcedFinalOnce = false;
 
@@ -109,6 +111,7 @@ async function runDocwrightAgentChat(
       calledTree,
       filesRead: session.getFilesReadCount(),
       maxFiles: input.limits.maxFilesRead,
+      largeTree,
     });
 
     if (forceFinal && !forcedFinalOnce) {
@@ -204,6 +207,12 @@ async function runDocwrightAgentChat(
             text.slice(0, input.limits.maxFileBytes) +
             "\n\n[truncated: file exceeded maxFileBytes]";
           warnings.push(`Truncated ${String(args.path)}`);
+        }
+        const capped = truncateToolResult(name, text);
+        text = capped.text;
+        if (capped.truncated) {
+          warnings.push(`Truncated tool result: ${name}`);
+          if (name === "get_repository_tree") largeTree = true;
         }
 
         messages.push({
