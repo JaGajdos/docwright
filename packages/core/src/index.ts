@@ -33,9 +33,34 @@ export {
 export type { PrCommentInput } from "./prComment.js";
 export { generateDocs, AgentLimitError } from "./agent/generateDocs.js";
 export type { GenerateDocsInput } from "./agent/generateDocs.js";
-export { createGithubMcpSession, resolveMcpLaunchConfig } from "./mcp/session.js";
+export {
+  createGithubMcpSession,
+  resolveMcpLaunchConfig,
+  resolveGithubMcpLaunchConfig,
+  createMcpProvider,
+  createMcpSession,
+  resolveMcpProvider,
+  registerMcpProvider,
+  unregisterMcpProvider,
+  listMcpProviders,
+  getMcpProvider,
+  githubMcpProvider,
+  extractRepoHost,
+} from "./mcp/session.js";
 export { withFileReadLimit } from "./mcp/types.js";
-export type { GithubMcpSession, McpToolName } from "./mcp/types.js";
+export type {
+  GithubMcpSession,
+  McpSession,
+  McpToolName,
+  LimitedMcpSession,
+} from "./mcp/types.js";
+export type {
+  McpProvider,
+  McpProviderId,
+  CreateMcpSessionOptions,
+  ResolveMcpProviderOptions,
+} from "./mcp/providerTypes.js";
+export type { McpLaunchConfig } from "./mcp/githubProvider.js";
 export { createLlmClient, resolveLlmModel, usesAzureOpenAI, usesResponsesApi, createConfiguredLlmProvider } from "./agent/llmClient.js";
 export type { LlmClient } from "./agent/llmClient.js";
 export {

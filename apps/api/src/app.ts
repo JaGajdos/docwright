@@ -98,6 +98,7 @@ export function createApp(deps: AppDeps = {}) {
       azureEndpointSet: Boolean(process.env.AZURE_OPENAI_ENDPOINT?.trim()),
       azureApiVersion:
         process.env.AZURE_OPENAI_API_VERSION?.trim() || "2025-04-01-preview",
+      mcpProvider: process.env.DOCWRIGHT_MCP_PROVIDER?.trim() || "github",
       mcpCommand: process.env.DOCWRIGHT_MCP_COMMAND?.trim() || "(default)",
       githubToolsets: process.env.GITHUB_TOOLSETS?.trim() || "(default in code)",
       rateLimitPerHour: process.env.DOCWRIGHT_RATE_LIMIT_PER_HOUR ?? "5",
@@ -133,6 +134,7 @@ export function createApp(deps: AppDeps = {}) {
       language?: string;
       limits?: GenerateDocsInput["limits"];
       sha?: string;
+      mcpProvider?: string;
     };
     try {
       body = await c.req.json();
@@ -158,6 +160,7 @@ export function createApp(deps: AppDeps = {}) {
           language: body.language,
           limits: body.limits,
           sha: body.sha,
+          mcpProvider: body.mcpProvider,
         }),
         timeoutMs,
       );

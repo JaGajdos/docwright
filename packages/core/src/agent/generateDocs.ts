@@ -1,8 +1,8 @@
 import { getLimits } from "../limits.js";
 import { loadAgentConfig } from "../agentConfig.js";
-import { createGithubMcpSession } from "../mcp/session.js";
+import { createMcpSession, resolveMcpProvider } from "../mcp/createProvider.js";
 import { withFileReadLimit } from "../mcp/types.js";
-import type { GithubMcpSession } from "../mcp/types.js";
+import type { McpSession } from "../mcp/types.js";
 import { parseRepoInput } from "../parseRepo.js";
 import { loadReadmeTemplate } from "../template.js";
 import type { DocwrightLimits, GenerateDocsOutput } from "../types.js";
@@ -25,8 +25,10 @@ export type GenerateDocsInput = {
   templatePath?: string;
   /** Override path to config/agent.json */
   agentConfigPath?: string;
+  /** Override DOCWRIGHT_MCP_PROVIDER for this request */
+  mcpProvider?: string;
   /** Inject session for tests */
-  mcpSession?: GithubMcpSession;
+  mcpSession?: McpSession;
 };
 
 export { AgentLimitError };
@@ -80,11 +82,23 @@ export async function generateDocs(
   debugLog("generate", "template loaded", { chars: template.length });
 
   debugLog("generate", "MCP session connecting…");
-  let baseSession: GithubMcpSession;
+  const mcpProvider = resolveMcpProvider({
+    providerId: input.mcpProvider,
+    repoUrl: input.repo,
+  });
+  let baseSession: McpSession;
   try {
-    baseSession = input.mcpSession ?? (await createGithubMcpSession());
+    baseSession =
+      input.mcpSession ??
+      (await createMcpSession({
+        providerId: input.mcpProvider,
+        repoUrl: input.repo,
+      }));
     debugLog("generate", "MCP session ready", {
       ms: Date.now() - t0,
+      provider: mcpProvider.id,
+      tools: mcpProvider.tools,
+      hosts: mcpProvider.hosts,
       injected: Boolean(input.mcpSession),
     });
   } catch (err) {
