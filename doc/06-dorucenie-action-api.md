@@ -1,9 +1,9 @@
 # Doručenie: GitHub Action + Public API
 
-Špecifikácia podľa [`../zadanie.txt`](../zadanie.txt) — **bez rozšírenia scope**.  
-SDD: nadväzuje na [`04`](./04-ziskanie-obsahu-github.md) (ingest) + [`05`](./05-readme-a-architecture-map.md) (generate).
+Špecifikácia podľa [`../zadanie.txt`](../zadanie.txt).  
+Nadväzuje na [`04`](./04-ziskanie-obsahu-github.md) (Agent+MCP) + [`05`](./05-readme-a-architecture-map.md).
 
-> **Quick start:** *… Then ship it as a GitHub Action that comments on new PRs.*  
+> **Quick start:** *… ship it as a GitHub Action that comments on new PRs.*  
 > **REACH FOR:** GitHub Actions · Public API
 
 ---
@@ -12,48 +12,64 @@ SDD: nadväzuje na [`04`](./04-ziskanie-obsahu-github.md) (ingest) + [`05`](./05
 
 | Bod | Význam |
 |-----|--------|
-| GitHub Action | Workflow v CI |
-| Comments on PRs | Výstup = **sticky PR komentár** (Markdown) |
-| Public API | Programový `POST /v1/generate` → README + mapa |
+| Public API | `POST /v1/generate` na **Railway** = Agent + MCP + OpenAI |
+| Web app | Klient API — URL → README + mapa ([`08`](./08-web-app.md)) |
+| GitHub Action | Sticky PR komentár; generate cez **volanie Railway API** |
 
-**Non-goals:** auto-commit / merge docs do default branch; docs site; private repo; Actions artifact pre architecture súbor.
-
----
-
-## 2. Scope
-
-### In scope
-- GitHub Action: generate **v jobe** + **sticky** komentár na PR
-- Public API: sync endpoint + **API key** auth
-- Shared Docwright core (knižnica) použitá Action jobom aj API
-- Konfigurácia: Action inputs / secrets / API body (limity, template, jazyk z `04`/`05`)
-
-### Out of scope
-- Auto-merge do `main`
-- Action → volanie hostovaného API ako jediná cesta generate (zvolené: generate v jobe)
-- Actions artifact pre `ARCHITECTURE.md`
-- Web UI
+**Non-goals:** auto-commit do default branch; docs site; private repo; Actions artifact.
 
 ---
 
-## 3. Tok doručenia (uzavreté)
+## 2. Tok (uzavreté)
 
 ```
-  Public API ──► Docwright core (shared) ──► JSON (full README + mapa + architectureMarkdownFile)
-                      ▲
-  GH Action ──────────┘
-       │  checkout / REST ingest + generate v jobe
+  Web (Pages) ──► Railway API ──► Agent + GitHub MCP + OpenAI ──► JSON
+                                      ▲
+  GH Action ──────────────────────────┘
+       │  POST /v1/generate (repo = PR head)
        └──► sticky PR comment (mapa full + skrátený README)
 ```
 
-**Agent / local quick start** (zo zadania): GitHub **MCP** + agent — pozri [`04`](./04-ziskanie-obsahu-github.md).  
-**Action / API server:** ingest cez **checkout alebo GitHub REST** (ekvivalent tree/files); MCP nie je povinný v CI/serveri.
+**Jeden mozog:** Agent+MCP beží **len na Railway**. Action a Web ho len volajú.
+
+---
+
+## 3. Public API (Railway)
+
+### 3.1 Kontrakt
+
+```http
+POST /v1/generate
+Content-Type: application/json
+# Web (browser): bez Authorization — rate limit podľa IP
+# Action / integrácie: Authorization: Bearer <DOCWRIGHT_API_KEY>
+
+{
+  "repo": "owner/name",
+  "ref": "main",
+  "language": "en",
+  "limits": { }
+}
+```
+
+**Sync**, timeout ~60–120 s.
+
+**Response `200`:** `readmeMarkdown`, `architectureMermaid`, `architectureMarkdownFile`, `warnings`, `prCommentMarkdown`, …
+
+Chyby: `400` · `401` (ak vyžadovaný key a chýba) · `404` · `429` · `502` · `504`.
+
+### 3.2 Auth
+
+| Volajúci | Auth |
+|----------|------|
+| Web (end-user) | Bez loginu, bez key v UI; **rate limit IP** |
+| Action / skripty | `DOCWRIGHT_API_KEY` (Bearer) |
 
 ---
 
 ## 4. GitHub Action
 
-### 4.1 Trigger (uzavreté)
+### 4.1 Trigger
 
 ```yaml
 on:
@@ -61,17 +77,13 @@ on:
     types: [opened, reopened, synchronize]
 ```
 
-- `synchronize` = aj pri nových commitov do PR (aktualizácia sticky komentára).
-- Sticky update bráni spamu pri opakovaných runoch.
-
 ### 4.2 Správanie
 
-1. Context: `owner`, `repo`, PR number, head SHA.
-2. `actions/checkout` (PR head) + Docwright generate **v jobe** (shared core).
-3. Zostaviť PR komentár (§5): **full architecture map** + **skrátený README**.
-4. **Sticky komentár:** nájsť existujúci Docwright komentár (marker) → `update`; inak `create`.
-5. **Nekommitovať** súbory do vetvy.
-6. Plný README / `architectureMarkdownFile` **nie** ako Actions artifact — len cez Public API.
+1. Zistiť `owner`, `repo`, PR number, head ref/SHA.
+2. `POST` na Railway `/v1/generate` s `repo` + `ref` = PR head (Agent+MCP na serveri).
+3. Z odpovede zložiť sticky komentár: **full mapa** + **skrátený README**.
+4. Nájdi komentár s `<!-- docwright-bot -->` → update; inak create.
+5. **Nekommitovať** súbory.
 
 ### 4.3 Permissions
 
@@ -81,24 +93,36 @@ permissions:
   pull-requests: write
 ```
 
-### 4.4 Inputs / secrets
+### 4.4 Secrets / inputs (v repozitári kde Action beží)
 
-| Input / secret | Účel |
+| Secret / input | Účel |
 |----------------|------|
-| LLM API key | Generate |
-| `readme_template_path` | Custom šablóna (optional) |
-| `output_language` | `en` \| `sk` |
-| limity z `04`/`05` | optional overrides |
-| GitHub token | default `GITHUB_TOKEN` na komentár |
+| `DOCWRIGHT_API_URL` | Base URL Railway (`https://….up.railway.app`) |
+| `DOCWRIGHT_API_KEY` | Bearer pre server→server volanie |
+| `GITHUB_TOKEN` | Default — sticky komentár |
 
-*(Docwright API URL nie je potrebná pre generate v jobe.)*
+*(OpenAI a GitHub MCP tokeny sú na Railway — nie v každom klientskom repo.)*
 
-### 4.5 Ingest v Action (podľa zadania)
+### 4.5 Príklad workflow
 
-| Path | Ingest |
-|------|--------|
-| Agent (quick start) | **GitHub MCP** — povinné zo zadania |
-| Action job | **Checkout + FS** (alebo REST) — rovnaký výstupný kontrakt ako `04`, bez povinného MCP v CI |
+```yaml
+name: Docwright
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: <owner>/<docwright-repo>/action@main
+        with:
+          api-url: ${{ secrets.DOCWRIGHT_API_URL }}
+          api-key: ${{ secrets.DOCWRIGHT_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
 
 ---
 
@@ -118,127 +142,31 @@ _Generated for this PR (`{{sha_short}}`)._
 ### README (summary)
 {{readme_summary}}
 
-<details>
-<summary>Full README available via Public API</summary>
-
-Use `POST /v1/generate` for the complete README draft.
-
-</details>
-
 ---
-_Docwright · jump to exploration_
+_AI-generated draft — review before use. Docwright · jump to exploration_
 ```
 
-| Časť | V komentári | V API |
-|------|-------------|-------|
-| Architecture map | **Full** (Mermaid / fallback) | Full |
-| README | **Skrátený** (napr. title, one-liner, What it is, Quick start) | **Full** `readmeMarkdown` |
-| `architectureMarkdownFile` | Nie (nie artifact) | Áno v JSON |
-
-Marker `<!-- docwright-bot -->` = identifikácia pre sticky update.
-
 ---
 
-## 6. Public API
+## 6. Acceptance
 
-### 6.1 Kontrakt
-
-```http
-POST /v1/generate
-Authorization: Bearer <DOCWRIGHT_API_KEY>
-Content-Type: application/json
-
-{
-  "repo": "owner/name",
-  "ref": "main",
-  "language": "en",
-  "limits": { }
-}
-```
-
-**Sync:** client čaká na hotový výsledok (timeout orientačne 60–120 s).
-
-**Response `200`:**
-
-```json
-{
-  "repo": "owner/name",
-  "ref": "main",
-  "sha": "abc123…",
-  "readmeMarkdown": "# …",
-  "architectureMermaid": "flowchart TB\n…",
-  "architectureMarkdownFile": "# Architecture\n\n```mermaid\n…\n```\n",
-  "architectureFallbackText": null,
-  "warnings": [],
-  "prCommentMarkdown": "## Docwright…"
-}
-```
-
-Chyby: `401` bad/missing API key · `400` · `404` · `429` · `502` · `504` timeout.
-
-### 6.2 Auth (uzavreté)
-
-- **API key** povinný (header). Žiadny hardcoded key v repo.
-- Hosting: implementačný detail (nasadenie neskôr; body.txt Lower ceiling).
-
-### 6.3 Ingest na API serveri (podľa zadania)
-
-Zadanie: *Connect the GitHub MCP, have the agent read one repo’s file tree* = **agent path**.  
-Public API = REACH FOR programový prístup — **nemusí** embedovať MCP.
-
-→ API server: **GitHub REST** (tree + contents) alebo ekvivalent; shared core ako Action.  
-MCP ostáva v agent / local quick start (`04`).
-
----
-
-## 7. Väzba Action ↔ API (uzavreté)
-
-**Model B — Generate v jobe** + samostatné Public API nad **shared core**.
-
-| Kanál | Generate kde | Doručenie |
-|-------|--------------|-----------|
-| Action | V GitHub runneri | Sticky PR comment (skrátený) |
-| Public API | Na serveri | Sync JSON (full) |
-
-Action **nevolá** Public API na generate (nezávislé od API uptime v CI).
-
----
-
-## 8. Riziká
-
-| Riziko | Dopad | Mitigácia |
-|--------|-------|-----------|
-| Častý `synchronize` | LLM $ | Limity `04`; optional skip ak SHA už processed |
-| Spam komentárov | Noise | **Sticky** update |
-| Dlhý komentár | Nepehľadnosť | **Skrátený** README v PR |
-| Secrets v Action | Únik | GitHub Secrets |
-| Duplicita Action vs API | Drift logiky | Shared core knižnica |
-
----
-
-## 9. Acceptance
-
-- [ ] Action na `opened` / `reopened` / **`synchronize`** aktualizuje **sticky** PR komentár
-- [ ] Komentár: **full mapa** + **skrátený README**; bez auto-commit
-- [ ] Generate **v jobe** (shared core), nie povinné volanie API z Action
-- [ ] Public API: sync `POST /v1/generate` + **API key** → full README + mapa + `architectureMarkdownFile`
+- [ ] Railway `/v1/generate` = **Agent + GitHub MCP** (povinné)
+- [ ] Web volá Railway; bez loginu; rate limit
+- [ ] Action volá Railway + sticky komentár
+- [ ] Komentár: full mapa + skrátený README; bez auto-commit
 - [ ] Žiadny Actions artifact pre architecture súbor
-- [ ] Ingest: **MCP** v agent path; **REST/checkout** v Action/API
-- [ ] Konzistentné s `04` + `05`
-
-**Stav dokumentu:** doručenie — **uzavreté** pre SDD.
 
 ---
 
-## 10. Rozhodnutia (uzavreté)
+## 7. Rozhodnutia (uzavreté)
 
 | # | Rozhodnutie |
 |---|-------------|
-| 1 | Trigger: **`opened` + `reopened` + `synchronize`** |
-| 2 | Komentár: **sticky** update |
-| 3 | Generate: **v jobe** (shared core; API samostatne) |
-| 4 | README v PR: **skrátený**; full v API |
-| 5 | API: **sync** |
-| 6 | API auth: **API key** |
-| 7 | Architecture súbor: **len v API response** (nie Actions artifact) |
-| 8 | Ingest podľa zadania: **MCP = agent path**; Action/API = **REST/checkout** |
+| 1 | Trigger: `opened` + `reopened` + `synchronize` |
+| 2 | Sticky komentár |
+| 3 | Generate: **vždy na Railway (Agent+MCP)**; Action = klient API |
+| 4 | README v PR skrátený; full v API |
+| 5 | API sync |
+| 6 | Web bez key; Action/integrácie s API key |
+| 7 | Architecture súbor len v API response |
+| 8 | Ingest web/API/Action generate path: **MCP na Railway** |

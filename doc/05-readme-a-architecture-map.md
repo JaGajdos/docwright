@@ -77,7 +77,7 @@ Zadanie vyžaduje README **from a template**. V projekte je šablóna **konfigur
 config.readme_template_path  →  load template  →  agent fills placeholders  →  readmeMarkdown
 ```
 
-### 4.2 Default šablóna (východisko)
+Default šablóna = súbor [`../templates/readme.md`](../templates/readme.md) (obsah nižšie / sync s týmto súborom).
 
 ```markdown
 # {{project_name}}

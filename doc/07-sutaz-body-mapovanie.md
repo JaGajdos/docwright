@@ -18,7 +18,7 @@ Legenda: ✅ sedí / v pláne zo zadania · 🟡 vieme doplniť bez driftu · �
 | **Tests From The Spec** | 8 | ⬜ | Po kóde: testy z acceptance v `04`/`05`/`06` |
 | **Spec Updated After Feedback** | 8 | ⬜ | Až po peer feedbacku — upraviť `doc/`, nie len kód |
 | First To Demo | 5 | ⬜ | Súťaž o čas |
-| Mobile Responsive | 3 | 🔴 | Zadanie nemá UI; nerobiť kvôli 3 b. |
+| Mobile Responsive | 3 | 🟡 | Web app v `08` — základný responsive |
 | Live Stripe Payment | 8 | 🔴 | Mimo zadania |
 
 **Hneď:** dokončiť/uzavrieť `06` → **commit celého `doc/`** (GATE).
@@ -31,12 +31,12 @@ Legenda: ✅ sedí / v pláne zo zadania · 🟡 vieme doplniť bez driftu · �
 
 | Tag | Stav | Ako v Docwright |
 |-----|------|----------------|
-| **Consumed An MCP** | ✅ v zadaní | Oficiálny `github/github-mcp-server` (`04`) |
-| **AI Agent** | ✅ v zadaní | Tool-calling agent (MCP tools + generate), nie jeden slepý prompt |
-| **GitHub Actions** | ✅ v zadaní | Action komentuje nové PRy (`06`) |
-| Public API | 🟡 | Vlastné API + third-party GitHub/LLM; sync + API key; Action generate v jobe (`06`) |
-| **Used Deep Research** | 🟡 čiastočne | `03` prieskum — pri deme dokázať dlhší research proces |
-| **CLI-Driven CI/CD** | 🟡 | Commitnutý Action YAML + `synchronize` sticky comment |
+| **Consumed An MCP** | ✅ | Oficiálny GitHub MCP na **Railway** pri každom generate (`04`/`09`) |
+| **AI Agent** | ✅ | Tool-calling agent na Railway |
+| **GitHub Actions** | ✅ | Action volá Railway + sticky komentár (`06`) |
+| **Public API** | ✅ | Railway `POST /v1/generate` |
+| **Used Deep Research** | 🟡 | `03` prieskum |
+| **CLI-Driven CI/CD** | 🟡 | Pages deploy + PR workflow |
 
 ### Sedí k produktu, nízky drift — **odporúčané doplniť do spec/implementácie**
 
@@ -68,7 +68,7 @@ Legenda: ✅ sedí / v pláne zo zadania · 🟡 vieme doplniť bez driftu · �
 
 Nasadenie Public API na jednu z: Cloudflare, Render, Vercel, Netlify, Railway, Fly.io, … (+ DB ak treba).
 
-**Odporúčanie:** 1× edge/host (ideálne **Cloudflare Workers** = aj *Cloud / Edge Workers* F-tag) pre Public API. Viac platforiem = body, ale čas vs. demo.
+**Odporúčanie:** **GitHub Pages** + **Railway** (Agent + GitHub MCP + OpenAI) — sync generate + 6 b. Lower ceiling. Inštalácia: [`09`](./09-nasadenie.md).
 
 ---
 

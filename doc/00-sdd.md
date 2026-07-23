@@ -24,8 +24,8 @@ zadanie.txt  →  doc/* (spec)  →  implementácia  →  validácia voči accep
 
 | Fáza | Čo | Stav Docwright |
 |------|-----|----------------|
-| Specify | Rozklad, požiadavky, ingest, … | prebieha v `doc/` |
-| Clarify | Otvorené otázky uzavrieť zo zadania | držať sa zadania |
+| Specify | Rozklad, požiadavky, ingest, generate, delivery, web | `doc/00`–`08` |
+| Clarify | Otvorené otázky uzavrieť | podľa dokumentu |
 | Plan / Tasks | Tech plán + úlohy z acceptance | pred kódom |
 | Implement | Agent/kód podľa spec | **až po commitnutej spec** |
 | Validate | Testy / demo voči acceptance | viazané na spec |
