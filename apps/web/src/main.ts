@@ -47,10 +47,15 @@ function clearError(): void {
   errorEl.textContent = "";
 }
 
+function setResultsVisible(visible: boolean): void {
+  results.hidden = !visible;
+  document.body.classList.toggle("has-results", visible);
+}
+
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   clearError();
-  results.hidden = true;
+  setResultsVisible(false);
   setGenerateLoading(submitBtn, statusEl, true);
 
   try {
@@ -74,7 +79,7 @@ form.addEventListener("submit", async (ev) => {
     }
 
     renderReadme(data.readmeMarkdown || "_Empty README._", readmeOut);
-    results.hidden = false;
+    setResultsVisible(true);
     setTab("architecture");
 
     if (data.warnings?.length) {

@@ -12,60 +12,89 @@
     />
   </head>
   <body>
-    <div class="page">
-      <header class="hero">
-        <p class="brand">Docwright</p>
-        <p class="tagline">The docs your repo never got around to writing.</p>
-      </header>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <p class="brand">Docwright</p>
+          <p class="tagline">The docs your repo never got around to writing.</p>
+        </div>
 
-      <form id="form" class="form" autocomplete="off">
-        <label class="sr-only" for="repo">GitHub repository</label>
-        <div class="row">
-          <input
-            id="repo"
-            name="repo"
-            type="text"
-            placeholder="https://github.com/owner/repo"
-            required
-          />
-          <button id="submit" type="submit">Generate</button>
-        </div>
-        <div class="toolbar">
-          <label class="lang">
-            Language
-            <select id="language" name="language">
-              <option value="en" selected>EN</option>
-              <option value="sk">SK</option>
-            </select>
-          </label>
-          <button type="button" id="demo" class="linkish">
-            Try example repo
-          </button>
-        </div>
-      </form>
+        <form id="form" class="form" autocomplete="off">
+          <label class="sr-only" for="repo">GitHub repository</label>
+          <div class="row">
+            <input
+              id="repo"
+              name="repo"
+              type="text"
+              placeholder="https://github.com/owner/repo"
+              required
+            />
+            <button id="submit" type="submit">Generate</button>
+          </div>
+          <div class="toolbar">
+            <label class="lang">
+              Language
+              <select id="language" name="language">
+                <option value="en" selected>EN</option>
+                <option value="sk">SK</option>
+              </select>
+            </label>
+            <button type="button" id="demo" class="linkish">
+              Try example repo
+            </button>
+          </div>
+        </form>
+      </header>
 
       <p id="status" class="status" hidden></p>
       <p id="error" class="error" role="alert" hidden></p>
 
-      <div id="results" class="results" hidden>
+      <main id="results" class="workspace" hidden>
         <div class="tabs" role="tablist">
-          <button type="button" class="tab active" data-tab="architecture" role="tab">
+          <button
+            type="button"
+            class="tab active"
+            data-tab="architecture"
+            role="tab"
+          >
             Architecture
           </button>
           <button type="button" class="tab" data-tab="readme" role="tab">
             README
           </button>
         </div>
+
         <div class="panels">
-          <section id="panel-architecture" class="panel active" role="tabpanel">
-            <div id="mermaid-out" class="mermaid-out"></div>
-            <pre id="mermaid-fallback" class="fallback" hidden></pre>
+          <section
+            id="panel-architecture"
+            class="panel active"
+            role="tabpanel"
+            aria-label="Architecture"
+          >
+            <header class="panel-head">
+              <h2>Architecture</h2>
+            </header>
+            <div class="panel-body">
+              <div id="mermaid-out" class="mermaid-out"></div>
+              <pre id="mermaid-fallback" class="fallback" hidden></pre>
+            </div>
           </section>
-          <section id="panel-readme" class="panel" role="tabpanel">
-            <article id="readme-out" class="readme-out prose"></article>
+
+          <section
+            id="panel-readme"
+            class="panel"
+            role="tabpanel"
+            aria-label="README"
+          >
+            <header class="panel-head">
+              <h2>README</h2>
+            </header>
+            <div class="panel-body">
+              <article id="readme-out" class="readme-out prose"></article>
+            </div>
           </section>
         </div>
-      </div>
+      </main>
 
       <footer class="footer">
         <p>
