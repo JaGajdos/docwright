@@ -10,6 +10,7 @@ import {
   extractJsonObject,
   shouldForceFinal,
 } from "./agentShared.js";
+import { debugLog, errorLog } from "../debug.js";
 
 const responseTools: FunctionTool[] = [
   {
@@ -160,7 +161,19 @@ export async function runDocwrightAgentResponses(
 
     const forceNoTools = askForJson && !isToolOutputArray(nextInput);
 
-    const response = await openai.responses.create({
+    debugLog("agent-responses", `round ${round}`, {
+      askForJson,
+      pendingToolOutputs,
+      budgetSaysFinal,
+      forceNoTools,
+      previousResponseId: previousResponseId ?? null,
+      inputKind: typeof nextInput === "string" ? "string" : "items",
+      inputLen: typeof nextInput === "string" ? nextInput.length : nextInput.length,
+    });
+
+    let response;
+    try {
+      response = await openai.responses.create({
       model,
       instructions,
       input: nextInput as never,
@@ -183,6 +196,21 @@ export async function runDocwrightAgentResponses(
                   : ("auto" as const),
           }),
     });
+    } catch (err) {
+      errorLog("agent-responses", err, {
+        round,
+        previousResponseId,
+        askForJson,
+        forceNoTools,
+      });
+      throw err;
+    }
+
+    debugLog("agent-responses", `round ${round} ok`, {
+      responseId: response.id,
+      outputTypes: (response.output ?? []).map((i) => i.type),
+      outputTextChars: (response.output_text ?? "").length,
+    });
 
     previousResponseId = response.id;
     pendingToolOutputs = false;
@@ -199,6 +227,11 @@ export async function runDocwrightAgentResponses(
     // ALWAYS answer function_calls — Azure returns 400 if the next turn
     // lacks function_call_output for each call_id.
     if (functionCalls.length > 0) {
+      debugLog("agent-responses", `tool calls ${functionCalls.length}`, {
+        names: functionCalls.map((c) => c.name),
+        callIds: functionCalls.map((c) => c.call_id),
+      });
+
       const toolOutputs: ToolOutputItem[] = [];
 
       for (const call of functionCalls) {

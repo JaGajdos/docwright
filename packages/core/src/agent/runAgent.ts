@@ -20,6 +20,7 @@ import {
   type AgentGenerateInput,
 } from "./agentShared.js";
 import { runDocwrightAgentResponses } from "./runAgentResponses.js";
+import { debugLog } from "../debug.js";
 
 export type { AgentGenerateInput } from "./agentShared.js";
 export { AgentLimitError } from "./agentShared.js";
@@ -251,7 +252,9 @@ export async function runDocwrightAgent(
 ): Promise<GenerateDocsOutput> {
   const openai = createLlmClient();
   if (usesResponsesApi()) {
+    debugLog("agent", "using Responses API path");
     return runDocwrightAgentResponses(session, input, openai);
   }
+  debugLog("agent", "using Chat Completions path");
   return runDocwrightAgentChat(session, input, openai);
 }

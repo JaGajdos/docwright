@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { debugLog } from "../debug.js";
 import type { GithubMcpSession, McpToolCallResult, McpToolName } from "./types.js";
 
 export type McpLaunchConfig = {
@@ -107,7 +108,14 @@ export async function createGithubMcpSession(
 
   const client = new Client({ name: "docwright", version: "0.1.0" });
   try {
+    debugLog("mcp", "spawning", {
+      command: launch.command,
+      args: launch.args,
+      toolsets: launch.env?.GITHUB_TOOLSETS,
+      tools: launch.env?.GITHUB_TOOLS,
+    });
     await client.connect(transport);
+    debugLog("mcp", "connected");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(

@@ -255,7 +255,23 @@ Lokálne MCP: Docker (`docker run … github-mcp-server`) **alebo** binárka +
 
 ---
 
-## 6. Riešenie častých chýb
+## 6b. Debug `/v1/generate` (Railway Logs)
+
+1. Railway Variables → `DOCWRIGHT_DEBUG=1` → Deploy  
+2. Service → **Logs** (runtime)  
+3. Spusti generate (curl / web)  
+4. V logoch hľadaj `[docwright …]`:
+   - `[generate] start` — LLM path (`responses` vs `chat`), model, azure  
+   - `[mcp] spawning` / `connected` — MCP  
+   - `[agent] using Responses API path`  
+   - `[agent-responses] round N` — tool calls / JSON  
+   - `POST /v1/generate FAIL` + stack — finálna chyba  
+
+Rýchla kontrola env (bez secretov):
+
+`GET https://docwright-production.up.railway.app/v1/debug/config`
+
+---
 
 | Symptóm | Príčina | Riešenie |
 |---------|---------|----------|
