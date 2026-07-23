@@ -9,28 +9,16 @@ const repoInput = document.querySelector<HTMLInputElement>("#repo")!;
 const languageSelect = document.querySelector<HTMLSelectElement>("#language")!;
 const submitBtn = document.querySelector<HTMLButtonElement>("#submit")!;
 const demoBtn = document.querySelector<HTMLButtonElement>("#demo")!;
+const loaderEl = document.querySelector<HTMLDivElement>("#loader")!;
+const loaderTitle = document.querySelector<HTMLParagraphElement>("#loader-title")!;
 const statusEl = document.querySelector<HTMLParagraphElement>("#status")!;
 const errorEl = document.querySelector<HTMLParagraphElement>("#error")!;
-const results = document.querySelector<HTMLDivElement>("#results")!;
+const results = document.querySelector<HTMLElement>("#results")!;
 const mermaidOut = document.querySelector<HTMLDivElement>("#mermaid-out")!;
 const mermaidFallback = document.querySelector<HTMLPreElement>("#mermaid-fallback")!;
 const readmeOut = document.querySelector<HTMLElement>("#readme-out")!;
-const tabs = document.querySelectorAll<HTMLButtonElement>(".tab");
 
 const DEMO_REPO = "https://github.com/sindresorhus/is";
-
-function setTab(name: string): void {
-  tabs.forEach((t) => {
-    t.classList.toggle("active", t.dataset.tab === name);
-  });
-  document.querySelectorAll<HTMLElement>(".panel").forEach((p) => {
-    p.classList.toggle("active", p.id === `panel-${name}`);
-  });
-}
-
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => setTab(tab.dataset.tab ?? "architecture"));
-});
 
 demoBtn.addEventListener("click", () => {
   repoInput.value = DEMO_REPO;
@@ -52,11 +40,20 @@ function setResultsVisible(visible: boolean): void {
   document.body.classList.toggle("has-results", visible);
 }
 
+function setLoading(loading: boolean): void {
+  setGenerateLoading(submitBtn, loaderTitle, loading, undefined, loaderEl);
+  document.body.classList.toggle("is-loading", loading);
+  if (loading) {
+    statusEl.hidden = true;
+    statusEl.textContent = "";
+  }
+}
+
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   clearError();
   setResultsVisible(false);
-  setGenerateLoading(submitBtn, statusEl, true);
+  setLoading(true);
 
   try {
     const data = await generateDocs({
@@ -80,18 +77,14 @@ form.addEventListener("submit", async (ev) => {
 
     renderReadme(data.readmeMarkdown || "_Empty README._", readmeOut);
     setResultsVisible(true);
-    setTab("architecture");
 
     if (data.warnings?.length) {
       statusEl.hidden = false;
       statusEl.textContent = `Done (warnings: ${data.warnings.length}).`;
-    } else {
-      statusEl.hidden = true;
     }
   } catch (err) {
     showError(userMessageForError(err));
-    statusEl.hidden = true;
   } finally {
-    setGenerateLoading(submitBtn, statusEl, false);
+    setLoading(false);
   }
 });

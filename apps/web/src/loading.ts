@@ -5,11 +5,15 @@ export function setGenerateLoading(
   submit: { disabled: boolean },
   status: { hidden: boolean; textContent: string },
   loading: boolean,
-  message = "Generating docs… this can take up to a couple of minutes.",
+  message = "Generating docs…",
+  loader?: { hidden: boolean } | null,
 ): void {
   submit.disabled = loading;
+  if (loader) loader.hidden = !loading;
   if (loading) {
     status.hidden = false;
     status.textContent = message;
+  } else if (loader) {
+    status.hidden = true;
   }
 }

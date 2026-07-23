@@ -49,51 +49,33 @@
       <p id="status" class="status" hidden></p>
       <p id="error" class="error" role="alert" hidden></p>
 
+      <div id="loader" class="loader" hidden aria-live="polite" aria-busy="true">
+        <div class="loader-visual" aria-hidden="true">
+          <span class="loader-ring"></span>
+          <span class="loader-ring loader-ring--delay"></span>
+          <span class="loader-core"></span>
+        </div>
+        <p id="loader-title" class="loader-title">Generating docs…</p>
+        <p class="loader-hint">
+          Reading the repo and drafting README + architecture. This can take a
+          minute or two.
+        </p>
+        <div class="loader-bar" aria-hidden="true"><span></span></div>
+      </div>
+
       <main id="results" class="workspace" hidden>
-        <div class="tabs" role="tablist">
-          <button
-            type="button"
-            class="tab active"
-            data-tab="architecture"
-            role="tab"
-          >
-            Architecture
-          </button>
-          <button type="button" class="tab" data-tab="readme" role="tab">
-            README
-          </button>
-        </div>
-
-        <div class="panels">
-          <section
-            id="panel-architecture"
-            class="panel active"
-            role="tabpanel"
-            aria-label="Architecture"
-          >
-            <header class="panel-head">
-              <h2>Architecture</h2>
-            </header>
-            <div class="panel-body">
-              <div id="mermaid-out" class="mermaid-out"></div>
-              <pre id="mermaid-fallback" class="fallback" hidden></pre>
-            </div>
+        <article class="doc">
+          <section class="doc-diagram" aria-label="Architecture">
+            <h2 class="doc-section-title">Architecture</h2>
+            <div id="mermaid-out" class="mermaid-out"></div>
+            <pre id="mermaid-fallback" class="fallback" hidden></pre>
           </section>
 
-          <section
-            id="panel-readme"
-            class="panel"
-            role="tabpanel"
-            aria-label="README"
-          >
-            <header class="panel-head">
-              <h2>README</h2>
-            </header>
-            <div class="panel-body">
-              <article id="readme-out" class="readme-out prose"></article>
-            </div>
+          <section class="doc-readme" aria-label="README">
+            <h2 class="doc-section-title">README</h2>
+            <div id="readme-out" class="readme-out prose"></div>
           </section>
-        </div>
+        </article>
       </main>
 
       <footer class="footer">
