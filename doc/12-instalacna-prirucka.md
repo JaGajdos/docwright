@@ -259,6 +259,7 @@ Lokálne MCP: Docker (`docker run … github-mcp-server`) **alebo** binárka +
 | `401 Incorrect API key` + odkaz na platform.openai.com | Chýba Azure endpoint → ide na public OpenAI | Nastav `AZURE_OPENAI_ENDPOINT` (+ version, deployment), Deploy |
 | `MCP error … Connection closed` | MCP binárka / `stdio` / token | Skontroluj `GITHUB_TOKEN`, `DOCWRIGHT_MCP_*`; redeploy |
 | `unknown tool "get_repository_tree"` | Toolset `git` nie je zapnutý | `GITHUB_TOOLSETS=repos,git` + `GITHUB_TOOLS=get_repository_tree,get_file_contents` |
+| `AGENT_LIMIT` / bez finálneho README | Model donekonečna volá tools | Opravené vo force-final agent loop; pull latest `main` a redeploy |
 | Build: `apps/web/package.json not found` | `.dockerignore` vylúčil web | Opravené v repo; pull latest `main` |
 | Len `*.railway.internal` | Nie je public domain | Generate Domain, port 8080 |
 | CORS v browsri | `CORS_ORIGINS` ≠ Pages origin | Nastav `https://<user>.github.io` |

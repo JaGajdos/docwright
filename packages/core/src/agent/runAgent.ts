@@ -1,6 +1,7 @@
 import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
+  ChatCompletionToolChoiceOption,
 } from "openai/resources/chat/completions";
 import type { LimitedMcpSession } from "../mcp/types.js";
 import type { DocwrightLimits, GenerateDocsOutput, RepoRef } from "../types.js";
@@ -116,6 +117,9 @@ function chatTemperature(fallback: number): number | undefined {
   return fallback;
 }
 
+const FINAL_JSON_INSTRUCTION =
+  "STOP calling tools. Based only on tool results already in this conversation, respond with ONLY one JSON object (no markdown fences) with keys: readmeMarkdown, architectureMermaid, architectureMarkdownFile, warnings. Fill the README template as best you can; use \"_Not detected from repo._\" where unknown.";
+
 async function repairMermaid(
   openai: LlmClient,
   broken: string,
@@ -140,6 +144,94 @@ async function repairMermaid(
   return validateMermaidFlowchart(cleaned).ok ? cleaned : null;
 }
 
+async function buildOutput(
+  openai: LlmClient,
+  parsed: AgentJson,
+  input: AgentGenerateInput,
+  calledTree: boolean,
+  warnings: string[],
+  session: LimitedMcpSession,
+): Promise<GenerateDocsOutput> {
+  if (!calledTree) {
+    warnings.push("Agent finished without get_repository_tree (unexpected).");
+  }
+
+  let mermaid = (parsed.architectureMermaid ?? "").trim();
+  let fallback: string | undefined;
+  const check = validateMermaidFlowchart(mermaid);
+  if (!check.ok) {
+    const repaired = await repairMermaid(
+      openai,
+      mermaid || "flowchart TB\n  A[App]",
+    );
+    if (repaired) {
+      mermaid = repaired;
+      warnings.push(`Mermaid repaired after: ${check.reason}`);
+    } else {
+      fallback = mermaidTextFallback(mermaid);
+      warnings.push(`Mermaid fallback after: ${check.reason}`);
+      mermaid = "";
+    }
+  }
+
+  const architectureMarkdownFile =
+    parsed.architectureMarkdownFile?.trim() ||
+    (mermaid
+      ? mermaidToArchitectureFile(mermaid)
+      : `# Architecture\n\n${fallback ?? "_Not detected from repo._"}\n`);
+
+  let readme = parsed.readmeMarkdown ?? "";
+  if (readme.includes("{{architecture_map}}")) {
+    const block = mermaid
+      ? `\`\`\`mermaid\n${mermaid}\n\`\`\``
+      : (fallback ?? "_Not detected from repo._");
+    readme = readme.replace("{{architecture_map}}", block);
+  }
+
+  const allWarnings = [
+    ...warnings,
+    ...(parsed.warnings ?? []),
+    ...session.getWarnings(),
+  ];
+
+  const readmeSummary = summarizeReadme(readme);
+  const prCommentMarkdown = buildPrCommentMarkdown({
+    architectureMermaid: mermaid || undefined,
+    architectureFallbackText: fallback,
+    readmeSummary,
+    sha: input.sha,
+  });
+
+  return {
+    readmeMarkdown: readme,
+    architectureMermaid: mermaid,
+    architectureMarkdownFile,
+    architectureFallbackText: fallback,
+    warnings: [...new Set(allWarnings)],
+    prCommentMarkdown,
+  };
+}
+
+/**
+ * After enough exploration (or near round budget), stop tools and demand JSON.
+ */
+function shouldForceFinal(input: {
+  round: number;
+  maxRounds: number;
+  calledTree: boolean;
+  filesRead: number;
+  maxFiles: number;
+}): boolean {
+  const { round, maxRounds, calledTree, filesRead, maxFiles } = input;
+  const remaining = maxRounds - round;
+  // Always reserve last rounds for a text/JSON answer
+  if (remaining <= 3) return true;
+  if (!calledTree) return false;
+  if (filesRead >= Math.min(6, maxFiles)) return true;
+  if (round >= 8) return true;
+  return false;
+}
+
 export async function runDocwrightAgent(
   session: LimitedMcpSession,
   input: AgentGenerateInput,
@@ -161,16 +253,50 @@ export async function runDocwrightAgent(
 
   let calledTree = false;
   const warnings = [...session.getWarnings()];
+  let forcedFinalOnce = false;
 
   for (let round = 0; round < input.limits.maxToolRounds; round++) {
+    const forceFinal = shouldForceFinal({
+      round,
+      maxRounds: input.limits.maxToolRounds,
+      calledTree,
+      filesRead: session.getFilesReadCount(),
+      maxFiles: input.limits.maxFilesRead,
+    });
+
+    if (forceFinal && !forcedFinalOnce) {
+      messages.push({ role: "user", content: FINAL_JSON_INSTRUCTION });
+      forcedFinalOnce = true;
+      warnings.push("Forced final JSON (tool budget / enough context).");
+    }
+
+    let toolChoice: ChatCompletionToolChoiceOption = "auto";
+    if (!forceFinal) {
+      if (round === 0) {
+        toolChoice = {
+          type: "function",
+          function: { name: "get_repository_tree" },
+        };
+      } else {
+        toolChoice = "auto";
+      }
+    }
+
     const completion = await openai.chat.completions.create({
       model: modelName(),
       ...(chatTemperature(0.2) !== undefined
         ? { temperature: chatTemperature(0.2) }
         : {}),
-      tools: openAiTools,
-      tool_choice: round === 0 ? "required" : "auto",
       messages,
+      ...(forceFinal
+        ? {
+            // No tools — model must answer with JSON text
+            response_format: { type: "json_object" as const },
+          }
+        : {
+            tools: openAiTools,
+            tool_choice: toolChoice,
+          }),
     });
 
     const msg = completion.choices[0]?.message;
@@ -178,14 +304,17 @@ export async function runDocwrightAgent(
       throw new Error("Empty completion from OpenAI.");
     }
 
+    const toolCalls =
+      forceFinal || !msg.tool_calls?.length ? undefined : msg.tool_calls;
+
     messages.push({
       role: "assistant",
       content: msg.content,
-      tool_calls: msg.tool_calls,
+      ...(toolCalls ? { tool_calls: toolCalls } : {}),
     });
 
-    if (msg.tool_calls && msg.tool_calls.length > 0) {
-      for (const call of msg.tool_calls) {
+    if (toolCalls && toolCalls.length > 0) {
+      for (const call of toolCalls) {
         if (call.type !== "function") continue;
         const name = call.function.name;
         if (!ALLOWED_TOOLS.has(name)) {
@@ -210,7 +339,6 @@ export async function runDocwrightAgent(
           args = {};
         }
 
-        // Force owner/repo for this run
         args.owner = input.owner;
         args.repo = input.repo;
         if (name === "get_repository_tree") {
@@ -251,73 +379,29 @@ export async function runDocwrightAgent(
       continue;
     }
 
-    // Final text response — expect JSON
     const parsed = extractJsonObject(msg.content ?? "");
     if (!parsed?.readmeMarkdown) {
-      messages.push({
-        role: "user",
-        content:
-          "Respond with ONLY the final JSON object as specified (readmeMarkdown, architectureMermaid, architectureMarkdownFile, warnings).",
-      });
+      if (!forcedFinalOnce) {
+        messages.push({ role: "user", content: FINAL_JSON_INSTRUCTION });
+        forcedFinalOnce = true;
+      } else {
+        messages.push({
+          role: "user",
+          content:
+            "Your last reply was not valid JSON with readmeMarkdown. Return ONLY the JSON object now.",
+        });
+      }
       continue;
     }
 
-    if (!calledTree) {
-      warnings.push("Agent finished without get_repository_tree (unexpected).");
-    }
-
-    let mermaid = (parsed.architectureMermaid ?? "").trim();
-    let fallback: string | undefined;
-    const check = validateMermaidFlowchart(mermaid);
-    if (!check.ok) {
-      const repaired = await repairMermaid(openai, mermaid || "flowchart TB\n  A[App]");
-      if (repaired) {
-        mermaid = repaired;
-        warnings.push(`Mermaid repaired after: ${check.reason}`);
-      } else {
-        fallback = mermaidTextFallback(mermaid);
-        warnings.push(`Mermaid fallback after: ${check.reason}`);
-        mermaid = "";
-      }
-    }
-
-    const architectureMarkdownFile =
-      parsed.architectureMarkdownFile?.trim() ||
-      (mermaid
-        ? mermaidToArchitectureFile(mermaid)
-        : `# Architecture\n\n${fallback ?? "_Not detected from repo._"}\n`);
-
-    // Ensure architecture appears in README if placeholder left
-    let readme = parsed.readmeMarkdown;
-    if (readme.includes("{{architecture_map}}")) {
-      const block = mermaid
-        ? `\`\`\`mermaid\n${mermaid}\n\`\`\``
-        : (fallback ?? "_Not detected from repo._");
-      readme = readme.replace("{{architecture_map}}", block);
-    }
-
-    const allWarnings = [
-      ...warnings,
-      ...(parsed.warnings ?? []),
-      ...session.getWarnings(),
-    ];
-
-    const readmeSummary = summarizeReadme(readme);
-    const prCommentMarkdown = buildPrCommentMarkdown({
-      architectureMermaid: mermaid || undefined,
-      architectureFallbackText: fallback,
-      readmeSummary,
-      sha: input.sha,
-    });
-
-    return {
-      readmeMarkdown: readme,
-      architectureMermaid: mermaid,
-      architectureMarkdownFile,
-      architectureFallbackText: fallback,
-      warnings: [...new Set(allWarnings)],
-      prCommentMarkdown,
-    };
+    return buildOutput(
+      openai,
+      parsed,
+      input,
+      calledTree,
+      warnings,
+      session,
+    );
   }
 
   throw new AgentLimitError(
