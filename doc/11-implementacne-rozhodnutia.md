@@ -28,15 +28,15 @@ Default šablóna súbor: [`../templates/readme.md`](../templates/readme.md).
 | Latencia / ops | Nižšia komplexita | Ťažšie debug |
 | Oficiálny server | Spustiť binárku / `npx` / Go build ako child | `docker run ghcr.io/github/github-mcp-server` |
 
-**Rozhodnutie:** API proces na Railway spustí **GitHub MCP ako child** (stdio) a komunikuje cez MCP SDK.
+**Rozhodnutie:** API/core spustí **GitHub MCP ako stdio child** cez MCP SDK (`StdioClientTransport`).
 
-Orientácia:
-1. Pri štarte API: spawn MCP (`github-mcp-server` alebo ekvivalent z oficiálneho balíka/image extract).
-2. Env child: `GITHUB_PERSONAL_ACCESS_TOKEN` = `GITHUB_TOKEN` z Railway.
-3. Parent drží MCP client session; agent volá tools cez túto session.
-4. Pri shutdown API: kill child.
+Default spawn (keď nie je `DOCWRIGHT_MCP_COMMAND`):
+```bash
+docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server
+```
+(oficiálny image; stále stdio z pohľadu Node klienta — nie samostatný Docker sidecar service.)
 
-Docker na Railway **nerobíme** v MVP (môže byť fallback neskôr).
+Override: `DOCWRIGHT_MCP_COMMAND=github-mcp-server` (binárka na PATH).
 
 ---
 

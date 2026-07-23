@@ -1,0 +1,13 @@
+# Keep image small — frontend/action not needed at runtime
+apps/web
+action
+doc
+slices
+.git
+.gitignore
+**/node_modules
+**/dist
+**/*.test.ts
+.env
+.env.*
+!.env.example

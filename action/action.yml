@@ -1,0 +1,15 @@
+name: Docwright
+description: Post sticky onboarding docs comment on pull requests
+runs:
+  using: node20
+  main: dist/index.js
+inputs:
+  api-url:
+    description: Docwright API base URL (Railway)
+    required: true
+  api-key:
+    description: Bearer token for Docwright API
+    required: true
+  github-token:
+    description: Token for PR comments (pass secrets.GITHUB_TOKEN)
+    required: true

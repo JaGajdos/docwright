@@ -1,0 +1,165 @@
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import {
+  AgentLimitError,
+  generateDocs,
+  type GenerateDocsInput,
+  type GenerateDocsOutput,
+} from "@docwright/core";
+import { apiError, mapGenerateError } from "./errors.js";
+import { IpRateLimiter, rateLimitFromEnv } from "./rateLimit.js";
+
+export type GenerateFn = (
+  input: GenerateDocsInput,
+) => Promise<GenerateDocsOutput>;
+
+export type AppDeps = {
+  generate?: GenerateFn;
+  rateLimiter?: IpRateLimiter;
+  apiKey?: string | null;
+  requestTimeoutMs?: number;
+};
+
+function parseCorsOrigins(): string[] | "*" {
+  const raw = process.env.CORS_ORIGINS?.trim();
+  if (!raw || raw === "*") return "*";
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function clientIp(c: {
+  req: { header: (name: string) => string | undefined };
+}): string {
+  const xff = c.req.header("x-forwarded-for");
+  if (xff) return xff.split(",")[0]?.trim() || "unknown";
+  return c.req.header("x-real-ip") || "unknown";
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => {
+      const err = new Error(`Request timed out after ${ms}ms`);
+      (err as Error & { code?: string }).code = "TIMEOUT";
+      reject(err);
+    }, ms);
+    promise
+      .then((v) => {
+        clearTimeout(t);
+        resolve(v);
+      })
+      .catch((e) => {
+        clearTimeout(t);
+        reject(e);
+      });
+  });
+}
+
+export function createApp(deps: AppDeps = {}) {
+  const app = new Hono();
+  const origins = parseCorsOrigins();
+  const limiter = deps.rateLimiter ?? new IpRateLimiter(rateLimitFromEnv());
+  const generate = deps.generate ?? generateDocs;
+  const configuredKey = deps.apiKey ?? process.env.DOCWRIGHT_API_KEY ?? null;
+  const timeoutMs =
+    deps.requestTimeoutMs ??
+    Number.parseInt(process.env.DOCWRIGHT_REQUEST_TIMEOUT_MS ?? "120000", 10);
+
+  app.use(
+    "*",
+    cors({
+      origin: origins === "*" ? "*" : origins,
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+    }),
+  );
+
+  app.get("/", (c) =>
+    c.json({
+      name: "docwright-api",
+      version: "0.1.0",
+      endpoints: ["POST /v1/generate"],
+    }),
+  );
+
+  app.post("/v1/generate", async (c) => {
+    const auth = c.req.header("authorization");
+    if (auth) {
+      const match = /^Bearer\s+(.+)$/i.exec(auth);
+      if (!configuredKey || !match || match[1] !== configuredKey) {
+        return c.json(apiError("UNAUTHORIZED", "Invalid or missing API key."), 401);
+      }
+    }
+
+    const ip = clientIp(c);
+    const rl = limiter.check(ip);
+    if (!rl.allowed) {
+      c.header("Retry-After", String(rl.retryAfterSec));
+      return c.json(
+        apiError(
+          "RATE_LIMITED",
+          "Too many requests. Please try again later.",
+        ),
+        429,
+      );
+    }
+
+    let body: {
+      repo?: string;
+      ref?: string;
+      language?: string;
+      limits?: GenerateDocsInput["limits"];
+      sha?: string;
+    };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json(apiError("INVALID_REPO", "Request body must be JSON."), 400);
+    }
+
+    if (!body.repo || typeof body.repo !== "string") {
+      return c.json(
+        apiError("INVALID_REPO", "Field 'repo' is required (owner/repo or URL)."),
+        400,
+      );
+    }
+
+    try {
+      const result = await withTimeout(
+        generate({
+          repo: body.repo,
+          ref: body.ref,
+          language: body.language,
+          limits: body.limits,
+          sha: body.sha,
+        }),
+        timeoutMs,
+      );
+
+      return c.json({
+        repo: body.repo,
+        ref: body.ref ?? null,
+        sha: body.sha ?? null,
+        readmeMarkdown: result.readmeMarkdown,
+        architectureMermaid: result.architectureMermaid,
+        architectureMarkdownFile: result.architectureMarkdownFile,
+        architectureFallbackText: result.architectureFallbackText ?? null,
+        warnings: result.warnings,
+        prCommentMarkdown: result.prCommentMarkdown,
+      });
+    } catch (err) {
+      const code = (err as Error & { code?: string }).code;
+      if (err instanceof AgentLimitError || code === "AGENT_LIMIT") {
+        return c.json(
+          apiError(
+            "AGENT_LIMIT",
+            err instanceof Error ? err.message : "Agent limit exceeded",
+          ),
+          502,
+        );
+      }
+      const mapped = mapGenerateError(err);
+      return c.json(mapped.body, mapped.status as 400 | 404 | 502 | 504);
+    }
+  });
+
+  return { app, limiter };
+}

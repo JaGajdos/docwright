@@ -1,0 +1,22 @@
+{
+  "name": "docwright",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Onboarding docs from any public GitHub repo — README + one-screen architecture map",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "action"
+  ],
+  "scripts": {
+    "build": "npm run build -w @docwright/core && npm run build -w @docwright/api && npm run build -w @docwright/web && npm run build -w @docwright/action",
+    "test": "npm run test --workspaces --if-present",
+    "generate": "npm run generate -w @docwright/core --",
+    "dev:api": "npm run dev -w @docwright/api",
+    "dev:web": "npm run dev -w @docwright/web",
+    "lint": "echo \"no lint yet\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

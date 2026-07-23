@@ -18,3 +18,5 @@ Zdroj zadania: [`../zadanie.txt`](../zadanie.txt)
 | [09-nasadenie.md](./09-nasadenie.md) | Deploy + inštalácia: Pages + Railway (env/secrets) |
 | [10-prevadzka-mvp.md](./10-prevadzka-mvp.md) | Stack, OpenAI, rate limit, chyby, Action, testy, disclaimer |
 | [11-implementacne-rozhodnutia.md](./11-implementacne-rozhodnutia.md) | Template súbor, agent loop, MCP stdio, mermaid, sticky API, npm |
+
+Implementačné slice: [`../slices/`](../slices/).

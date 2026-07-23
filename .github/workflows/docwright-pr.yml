@@ -1,0 +1,33 @@
+name: Docwright
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install and build Action
+        run: |
+          npm ci
+          npm run build -w @docwright/core
+          npm run build -w @docwright/action
+
+      - name: Docwright sticky comment
+        uses: ./action
+        with:
+          api-url: ${{ secrets.DOCWRIGHT_API_URL }}
+          api-key: ${{ secrets.DOCWRIGHT_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
