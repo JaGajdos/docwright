@@ -30,9 +30,9 @@ const en = {
   upsellText:
     "Free scans sample the tree and a few key files. Pro Deep scan walks packages, apps, and CI so README and architecture match larger monorepos.",
   upsellCta: "Unlock Deep scan",
-  plansHeading: "How Docwright scales",
+  plansHeading: "What Docwright does",
   plansIntro:
-    "Monetize depth and continuity — not just “another README.” Free proves the product; Pro sells better scanning and always-on docs.",
+    "Point Docwright at a public GitHub repo and it drafts a clean README plus a one-screen architecture map. Paid plans simply go further — deeper scans, private repos, and docs that stay up to date.",
   planFree: "Free",
   planFreePrice: "€0",
   planFreeDesc: "Public repos, Quick scan",
@@ -100,9 +100,9 @@ const sk: Record<MessageKey, string> = {
   upsellText:
     "Bezplatný sken vezme strom a pár kľúčových súborov. Pro hlboký sken prejde packages, apps a CI, aby README a architektúra sedeli aj na väčšie monorepá.",
   upsellCta: "Odomknúť hlboký sken",
-  plansHeading: "Ako Docwright rastie",
+  plansHeading: "Čo Docwright robí",
   plansIntro:
-    "Spenazujeme hĺbku a kontinuitu — nie len „ďalšie README“. Free ukáže produkt; Pro predáva lepší sken a docs, čo ostávajú aktuálne.",
+    "Ukáž Docwrightu public GitHub repo a dostaneš čisté README plus mapu architektúry na jednu obrazovku. Za poplatok vie ísť ďalej — hlbší sken, súkromné repá a docs, ktoré ostávajú aktuálne.",
   planFree: "Free",
   planFreePrice: "€0",
   planFreeDesc: "Verejné repá, rýchly sken",
