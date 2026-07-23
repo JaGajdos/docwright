@@ -56,9 +56,30 @@ const FINAL_JSON_INSTRUCTION =
 
 const ALLOWED = new Set(["get_repository_tree", "get_file_contents"]);
 
+type ToolOutputItem = {
+  type: "function_call_output";
+  call_id: string;
+  output: string;
+};
+
+type UserInputItem = { role: "user"; content: string };
+
+function isToolOutputArray(
+  input: string | Array<Record<string, unknown>>,
+): input is ToolOutputItem[] {
+  return (
+    Array.isArray(input) &&
+    input.length > 0 &&
+    input.every((i) => i.type === "function_call_output")
+  );
+}
+
 function outputText(response: {
   output_text?: string;
-  output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }>;
+  output?: Array<{
+    type: string;
+    content?: Array<{ type: string; text?: string }>;
+  }>;
 }): string {
   if (response.output_text?.trim()) return response.output_text.trim();
   const parts: string[] = [];
@@ -74,6 +95,10 @@ function outputText(response: {
 
 /**
  * Azure gpt-5.6-* deployments use Responses API (/openai/responses), not chat.completions.
+ *
+ * Important: every function_call in a response MUST be answered with matching
+ * function_call_output on the next turn (previous_response_id). Never send a
+ * plain user message while tool outputs are still pending.
  */
 export async function runDocwrightAgentResponses(
   session: LimitedMcpSession,
@@ -94,10 +119,11 @@ export async function runDocwrightAgentResponses(
   const warnings = [...session.getWarnings()];
   let previousResponseId: string | undefined;
   let nextInput: string | Array<Record<string, unknown>> = userPrompt;
-  let forcedFinalOnce = false;
+  let askForJson = false;
+  let pendingToolOutputs = false;
 
   for (let round = 0; round < input.limits.maxToolRounds; round++) {
-    const forceFinal = shouldForceFinal({
+    const budgetSaysFinal = shouldForceFinal({
       round,
       maxRounds: input.limits.maxToolRounds,
       calledTree,
@@ -105,16 +131,34 @@ export async function runDocwrightAgentResponses(
       maxFiles: input.limits.maxFilesRead,
     });
 
-    if (forceFinal && !forcedFinalOnce) {
-      // Append as new user turn via input array when continuing
+    // Only inject "final JSON" user text when we are NOT still holding
+    // unanswered function_call_outputs from the previous model turn.
+    if (
+      (budgetSaysFinal || askForJson) &&
+      !pendingToolOutputs &&
+      !isToolOutputArray(nextInput)
+    ) {
       if (previousResponseId) {
         nextInput = [{ role: "user", content: FINAL_JSON_INSTRUCTION }];
       } else {
         nextInput = `${userPrompt}\n\n${FINAL_JSON_INSTRUCTION}`;
       }
-      forcedFinalOnce = true;
+      askForJson = true;
       warnings.push("Forced final JSON (Responses API / tool budget).");
     }
+
+    // If we have pending tool outputs AND want JSON next, append instruction
+    // after the outputs (never replace them).
+    if (isToolOutputArray(nextInput) && (budgetSaysFinal || askForJson)) {
+      nextInput = [
+        ...nextInput,
+        { role: "user", content: FINAL_JSON_INSTRUCTION } satisfies UserInputItem,
+      ];
+      askForJson = true;
+      warnings.push("Tool outputs + final JSON instruction.");
+    }
+
+    const forceNoTools = askForJson && !isToolOutputArray(nextInput);
 
     const response = await openai.responses.create({
       model,
@@ -124,7 +168,7 @@ export async function runDocwrightAgentResponses(
         ? { previous_response_id: previousResponseId }
         : {}),
       store: true,
-      ...(forceFinal
+      ...(forceNoTools
         ? {
             tool_choice: "none" as const,
             text: { format: { type: "json_object" as const } },
@@ -134,23 +178,28 @@ export async function runDocwrightAgentResponses(
             tool_choice:
               round === 0 && !previousResponseId
                 ? ({ type: "function", name: "get_repository_tree" } as const)
-                : ("auto" as const),
+                : askForJson
+                  ? ("none" as const)
+                  : ("auto" as const),
           }),
     });
 
     previousResponseId = response.id;
+    pendingToolOutputs = false;
 
     const functionCalls = (response.output ?? []).filter(
-      (item): item is Extract<(typeof response.output)[number], { type: "function_call" }> =>
-        item.type === "function_call",
+      (
+        item,
+      ): item is Extract<
+        (typeof response.output)[number],
+        { type: "function_call" }
+      > => item.type === "function_call",
     );
 
-    if (functionCalls.length > 0 && !forceFinal) {
-      const toolOutputs: Array<{
-        type: "function_call_output";
-        call_id: string;
-        output: string;
-      }> = [];
+    // ALWAYS answer function_calls — Azure returns 400 if the next turn
+    // lacks function_call_output for each call_id.
+    if (functionCalls.length > 0) {
+      const toolOutputs: ToolOutputItem[] = [];
 
       for (const call of functionCalls) {
         const name = call.name;
@@ -209,6 +258,20 @@ export async function runDocwrightAgentResponses(
 
       warnings.push(...session.getWarnings());
       nextInput = toolOutputs;
+      pendingToolOutputs = true;
+
+      // After this tool batch, prefer ending on the next turn
+      if (
+        shouldForceFinal({
+          round: round + 1,
+          maxRounds: input.limits.maxToolRounds,
+          calledTree,
+          filesRead: session.getFilesReadCount(),
+          maxFiles: input.limits.maxFilesRead,
+        })
+      ) {
+        askForJson = true;
+      }
       continue;
     }
 
@@ -218,12 +281,12 @@ export async function runDocwrightAgentResponses(
       nextInput = [
         {
           role: "user",
-          content: forcedFinalOnce
+          content: askForJson
             ? "Your last reply was not valid JSON with readmeMarkdown. Return ONLY the JSON object now."
             : FINAL_JSON_INSTRUCTION,
         },
       ];
-      forcedFinalOnce = true;
+      askForJson = true;
       continue;
     }
 
