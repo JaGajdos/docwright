@@ -28,7 +28,7 @@ function ensureMermaid(): void {
   if (mermaidReady) return;
   mermaid.initialize({
     startOnLoad: false,
-    theme: "dark",
+    theme: "neutral",
     securityLevel: "loose",
   });
   mermaidReady = true;

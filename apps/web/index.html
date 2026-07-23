@@ -7,11 +7,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
+    <div class="ambient" aria-hidden="true"></div>
     <div class="shell">
       <header class="topbar">
         <div class="brand-block">
@@ -21,7 +22,7 @@
 
         <form id="form" class="form" autocomplete="off">
           <label class="sr-only" for="repo">GitHub repository</label>
-          <div class="row">
+          <div class="composer">
             <input
               id="repo"
               name="repo"
@@ -50,30 +51,27 @@
       <p id="error" class="error" role="alert" hidden></p>
 
       <div id="loader" class="loader" hidden aria-live="polite" aria-busy="true">
-        <div class="loader-visual" aria-hidden="true">
-          <span class="loader-ring"></span>
-          <span class="loader-ring loader-ring--delay"></span>
-          <span class="loader-core"></span>
+        <div class="loader-orbit" aria-hidden="true">
+          <span></span><span></span><span></span>
         </div>
         <p id="loader-title" class="loader-title">Generating docs…</p>
         <p class="loader-hint">
           Reading the repo and drafting README + architecture. This can take a
           minute or two.
         </p>
-        <div class="loader-bar" aria-hidden="true"><span></span></div>
       </div>
 
       <main id="results" class="workspace" hidden>
         <article class="doc">
+          <section class="doc-readme" aria-label="README">
+            <h2 class="doc-section-title">README</h2>
+            <div id="readme-out" class="readme-out prose"></div>
+          </section>
+
           <section class="doc-diagram" aria-label="Architecture">
             <h2 class="doc-section-title">Architecture</h2>
             <div id="mermaid-out" class="mermaid-out"></div>
             <pre id="mermaid-fallback" class="fallback" hidden></pre>
-          </section>
-
-          <section class="doc-readme" aria-label="README">
-            <h2 class="doc-section-title">README</h2>
-            <div id="readme-out" class="readme-out prose"></div>
           </section>
         </article>
       </main>
