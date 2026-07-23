@@ -5,6 +5,16 @@ export type {
   RepoRef,
 } from "./types.js";
 export { getLimits } from "./limits.js";
+export {
+  fillAgentPlaceholders,
+  loadAgentConfig,
+  resolveAgentConfigPath,
+} from "./agentConfig.js";
+export type {
+  AgentFileConfig,
+  AgentPromptFiles,
+  LoadedAgentConfig,
+} from "./agentConfig.js";
 export { parseRepoInput } from "./parseRepo.js";
 export {
   fillTemplate,

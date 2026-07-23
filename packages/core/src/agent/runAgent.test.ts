@@ -23,6 +23,13 @@ vi.mock("openai", () => {
 
 import { runDocwrightAgent } from "./runAgent.js";
 
+const TEST_PROMPTS = {
+  system:
+    "You are Docwright. language={{language}} nodes={{max_architecture_nodes}}. Return JSON.",
+  user: "Docs for {{owner}}/{{repo}} ({{ref_line}})\n{{template}}",
+  final: "STOP calling tools. Return JSON now.",
+};
+
 function emptySession(
   onTool?: (name: string) => { text: string; isError?: boolean },
 ): LimitedMcpSession & { toolCalls: string[] } {
@@ -94,6 +101,7 @@ describe("runDocwrightAgent (mocked OpenAI + MCP)", () => {
       repo: "r",
       template: "# {{project_name}}\n{{architecture_map}}",
       limits: getLimits({ maxToolRounds: 5 }),
+      prompts: TEST_PROMPTS,
       language: "en",
     });
 
@@ -181,6 +189,7 @@ describe("runDocwrightAgent (mocked OpenAI + MCP)", () => {
       repo: "r",
       template: "# {{project_name}}",
       limits: getLimits({ maxToolRounds: 8 }),
+      prompts: TEST_PROMPTS,
     });
 
     expect(session.toolCalls).toEqual([
@@ -247,6 +256,7 @@ describe("runDocwrightAgent (mocked OpenAI + MCP)", () => {
       repo: "r",
       template: "# {{project_name}}\n{{architecture_map}}",
       limits: getLimits({ maxToolRounds: 5 }),
+      prompts: TEST_PROMPTS,
     });
 
     expect(out.architectureMermaid).toBe("");
@@ -331,6 +341,7 @@ describe("runDocwrightAgent (mocked OpenAI + MCP)", () => {
       repo: "r",
       template: "# {{project_name}}",
       limits: getLimits({ maxToolRounds: 8, maxFileBytes: 50 }),
+      prompts: TEST_PROMPTS,
     });
 
     expect(out.warnings.some((w) => w.includes("Truncated"))).toBe(true);

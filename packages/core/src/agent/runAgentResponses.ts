@@ -2,7 +2,7 @@ import type { FunctionTool } from "openai/resources/responses/responses.js";
 import type { LimitedMcpSession } from "../mcp/types.js";
 import type { GenerateDocsOutput } from "../types.js";
 import { createLlmClient, resolveLlmModel, type LlmClient } from "./llmClient.js";
-import { buildSystemPrompt, buildUserPrompt } from "./prompts.js";
+import { buildFinalInstruction, buildSystemPrompt, buildUserPrompt } from "./prompts.js";
 import {
   AgentLimitError,
   type AgentGenerateInput,
@@ -11,10 +11,7 @@ import {
   shouldForceFinal,
 } from "./agentShared.js";
 import { debugLog, errorLog } from "../debug.js";
-import {
-  maxFileToolsPerRound,
-  truncateToolResult,
-} from "./toolResultBudget.js";
+import { truncateToolResult } from "./toolResultBudget.js";
 
 const responseTools: FunctionTool[] = [
   {
@@ -55,9 +52,6 @@ const responseTools: FunctionTool[] = [
     },
   },
 ];
-
-const FINAL_JSON_INSTRUCTION =
-  "STOP calling tools. Based only on tool results already in this conversation, respond with ONLY one JSON object (no markdown fences) with keys: readmeMarkdown, architectureMermaid, architectureMarkdownFile, warnings. Fill the README template as best you can; use \"_Not detected from repo._\" where unknown.";
 
 const ALLOWED = new Set(["get_repository_tree", "get_file_contents"]);
 
@@ -112,13 +106,21 @@ export async function runDocwrightAgentResponses(
 ): Promise<GenerateDocsOutput> {
   const language = input.language ?? "en";
   const model = resolveLlmModel();
-  const instructions = buildSystemPrompt(language);
-  const userPrompt = buildUserPrompt({
-    owner: input.owner,
-    repo: input.repo,
-    ref: input.ref,
-    template: input.template,
-  });
+  const finalInstruction = buildFinalInstruction(input.prompts.final);
+  const instructions = buildSystemPrompt(
+    language,
+    input.limits.maxArchitectureNodes,
+    input.prompts.system,
+  );
+  const userPrompt = buildUserPrompt(
+    {
+      owner: input.owner,
+      repo: input.repo,
+      ref: input.ref,
+      template: input.template,
+    },
+    input.prompts.user,
+  );
 
   let calledTree = false;
   let largeTree = false;
@@ -146,9 +148,9 @@ export async function runDocwrightAgentResponses(
       !isToolOutputArray(nextInput)
     ) {
       if (previousResponseId) {
-        nextInput = [{ role: "user", content: FINAL_JSON_INSTRUCTION }];
+        nextInput = [{ role: "user", content: finalInstruction }];
       } else {
-        nextInput = `${userPrompt}\n\n${FINAL_JSON_INSTRUCTION}`;
+        nextInput = `${userPrompt}\n\n${finalInstruction}`;
       }
       askForJson = true;
       warnings.push("Forced final JSON (Responses API / tool budget).");
@@ -159,7 +161,7 @@ export async function runDocwrightAgentResponses(
     if (isToolOutputArray(nextInput) && (budgetSaysFinal || askForJson)) {
       nextInput = [
         ...nextInput,
-        { role: "user", content: FINAL_JSON_INSTRUCTION } satisfies UserInputItem,
+        { role: "user", content: finalInstruction } satisfies UserInputItem,
       ];
       askForJson = true;
       warnings.push("Tool outputs + final JSON instruction.");
@@ -239,7 +241,7 @@ export async function runDocwrightAgentResponses(
       });
 
       const toolOutputs: ToolOutputItem[] = [];
-      const maxFilesThisRound = maxFileToolsPerRound();
+      const maxFilesThisRound = input.limits.maxFileToolsPerRound;
       let filesThisRound = 0;
 
       for (const call of functionCalls) {
@@ -306,7 +308,11 @@ export async function runDocwrightAgentResponses(
           warnings.push(`Truncated ${String(args.path)}`);
         }
 
-        const capped = truncateToolResult(name, text);
+        const capped = truncateToolResult(
+          name,
+          text,
+          input.limits.maxToolResultChars,
+        );
         text = capped.text;
         if (capped.truncated) {
           warnings.push(`Truncated tool result: ${name}`);
@@ -365,7 +371,7 @@ export async function runDocwrightAgentResponses(
           role: "user",
           content: askForJson
             ? "Your last reply was not valid JSON with readmeMarkdown. Return ONLY the JSON object now."
-            : FINAL_JSON_INSTRUCTION,
+            : finalInstruction,
         },
       ];
       askForJson = true;

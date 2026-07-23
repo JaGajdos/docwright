@@ -72,7 +72,8 @@ body {
 
 .topbar {
   flex: 0 0 auto;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
   padding: 2rem 1.75rem 1.5rem;
   animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -86,8 +87,10 @@ body.is-loading .topbar {
   border-bottom: 1px solid var(--line);
   background: rgba(245, 248, 246, 0.82);
   backdrop-filter: blur(16px) saturate(1.2);
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+}
+
+.brand-block {
+  width: 100%;
 }
 
 .brand {
@@ -110,28 +113,6 @@ body.is-loading .topbar {
   max-width: 38rem;
   line-height: 1.4;
   font-weight: 500;
-  transition:
-    opacity 0.28s ease,
-    max-height 0.28s ease,
-    margin 0.28s ease;
-}
-
-body.has-results .tagline,
-body.is-loading .tagline {
-  opacity: 0;
-  max-height: 0;
-  margin: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-body.has-results .brand,
-body.is-loading .brand {
-  font-size: clamp(1.9rem, 2.6vw, 2.35rem);
-  background: none;
-  color: var(--ink);
-  -webkit-background-clip: unset;
-  background-clip: unset;
 }
 
 .form {
@@ -264,6 +245,37 @@ button[type="submit"]:disabled {
   color: var(--muted);
   font-size: var(--text-sm);
   font-weight: 500;
+}
+
+.warnings {
+  margin: 0.85rem 1.75rem 0;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 122, 102, 0.08);
+  border: 1px solid rgba(15, 122, 102, 0.22);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.warnings[hidden] {
+  display: none !important;
+}
+
+.warnings-title {
+  margin: 0 0 0.55rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.warnings-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.warnings-list li {
+  margin: 0.25rem 0;
 }
 
 .error {
@@ -565,20 +577,12 @@ button[type="submit"]:disabled {
 
 @media (min-width: 960px) {
   .topbar {
-    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-    align-items: end;
-    gap: 2rem 2.75rem;
+    gap: 1.75rem;
     padding: 2.5rem 2.75rem 1.75rem;
   }
 
-  body.has-results .topbar,
-  body.is-loading .topbar {
-    align-items: center;
-    padding: 1rem 2.75rem;
-  }
-
   .form {
-    max-width: none;
+    max-width: 56rem;
   }
 
   input[type="text"] {
@@ -592,7 +596,8 @@ button[type="submit"]:disabled {
   }
 
   .error,
-  .status {
+  .status,
+  .warnings {
     margin-left: 2.75rem;
     margin-right: 2.75rem;
   }

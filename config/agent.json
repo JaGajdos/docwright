@@ -1,0 +1,17 @@
+{
+  "limits": {
+    "maxFilesRead": 8,
+    "maxFileBytes": 40000,
+    "maxTotalBytes": 200000,
+    "maxToolRounds": 8,
+    "treeRecursive": true,
+    "maxArchitectureNodes": 12,
+    "maxToolResultChars": 12000,
+    "maxFileToolsPerRound": 3
+  },
+  "prompts": {
+    "system": "config/prompts/system.md",
+    "user": "config/prompts/user.md",
+    "final": "config/prompts/final.md"
+  }
+}

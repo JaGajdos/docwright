@@ -9,11 +9,13 @@ import {
   validateMermaidFlowchart,
 } from "./mermaid.js";
 import { type LlmClient } from "./llmClient.js";
+import type { AgentPromptTemplates } from "./prompts.js";
 
 export type AgentGenerateInput = RepoRef & {
   language?: string;
   template: string;
   limits: DocwrightLimits;
+  prompts: AgentPromptTemplates;
   sha?: string;
 };
 

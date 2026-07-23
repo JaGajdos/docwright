@@ -130,8 +130,24 @@ Bez toho MCP nevie tool `get_repository_tree` (je v toolsete `git`, nie v defaul
 | `DOCWRIGHT_REQUEST_TIMEOUT_MS` | `120000` |
 | `DOCWRIGHT_RATE_LIMIT_PER_HOUR` | `5` |
 | `DOCWRIGHT_RATE_LIMIT_PER_DAY` | `20` |
-| `DOCWRIGHT_MAX_FILES_READ` | `25` |
+| `DOCWRIGHT_MAX_FILES_READ` | `8` (alebo hodnota v `config/agent.json`) |
+| `DOCWRIGHT_AGENT_CONFIG` | cesta k `config/agent.json` |
 | `OPENAI_MODEL` | len pri **public** OpenAI (nie Azure) |
+
+### 2.2b Agent prompt + limity (súbory)
+
+Bez rebuildu TypeScriptu uprav správanie LLM cez:
+
+| Súbor | Čo meníš |
+|-------|----------|
+| `config/agent.json` | limity (súbory, byty, tool rounds, truncate) |
+| `config/prompts/system.md` | systémové pravidlá pre model |
+| `config/prompts/user.md` | user prompt (šablóna README) |
+| `config/prompts/final.md` | inštrukcia „už skonči a vráť JSON“ |
+| `templates/readme.md` | kostra README |
+
+Priorita limitov: call override → env `DOCWRIGHT_MAX_*` → `agent.json` → default.  
+Po zmene na Railway treba **nový deploy** (súbory sú v image). Detail: [`config/README.md`](../config/README.md).
 
 ### 2.3 Public Networking (povinné)
 

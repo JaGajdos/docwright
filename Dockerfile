@@ -14,6 +14,7 @@ RUN npm ci
 COPY packages/core packages/core
 COPY apps/api apps/api
 COPY templates templates
+COPY config config
 
 RUN npm run build -w @docwright/core && npm run build -w @docwright/api \
   && npm prune --omit=dev

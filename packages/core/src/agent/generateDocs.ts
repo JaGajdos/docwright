@@ -1,4 +1,5 @@
 import { getLimits } from "../limits.js";
+import { loadAgentConfig } from "../agentConfig.js";
 import { createGithubMcpSession } from "../mcp/session.js";
 import { withFileReadLimit } from "../mcp/types.js";
 import type { GithubMcpSession } from "../mcp/types.js";
@@ -21,6 +22,8 @@ export type GenerateDocsInput = {
   limits?: Partial<DocwrightLimits>;
   sha?: string;
   templatePath?: string;
+  /** Override path to config/agent.json */
+  agentConfigPath?: string;
   /** Inject session for tests */
   mcpSession?: GithubMcpSession;
 };
@@ -53,8 +56,15 @@ export async function generateDocs(
   }
   debugLog("generate", "parsed", parsed.value);
 
+  const agentConfig = await loadAgentConfig(input.agentConfigPath);
+  debugLog("generate", "agent config", {
+    path: agentConfig.configPath,
+    systemChars: agentConfig.prompts.system.length,
+    userChars: agentConfig.prompts.user.length,
+  });
+
   const ref = input.ref ?? parsed.value.ref;
-  const limits = getLimits(input.limits);
+  const limits = getLimits(input.limits, agentConfig.limits);
   debugLog("generate", "limits", limits);
 
   const template = await loadReadmeTemplate(input.templatePath);
@@ -84,6 +94,7 @@ export async function generateDocs(
       language: input.language ?? "en",
       template,
       limits,
+      prompts: agentConfig.prompts,
       sha: input.sha,
     });
     debugLog("generate", "done", {

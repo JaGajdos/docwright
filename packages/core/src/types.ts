@@ -12,6 +12,10 @@ export type DocwrightLimits = {
   maxToolRounds: number;
   treeRecursive: boolean;
   maxArchitectureNodes: number;
+  /** Truncate MCP tool results before sending to the LLM */
+  maxToolResultChars: number;
+  /** Max get_file_contents calls executed per model turn */
+  maxFileToolsPerRound: number;
 };
 
 export type GenerateDocsOutput = {

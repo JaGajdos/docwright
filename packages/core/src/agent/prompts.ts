@@ -1,47 +1,40 @@
-export function buildSystemPrompt(language: string): string {
-  return `You are Docwright, an onboarding docs agent.
+import { fillAgentPlaceholders } from "../agentConfig.js";
 
-Goal: For one public GitHub repository, produce:
-1) A README filled from the provided Markdown template (placeholders like {{project_name}}).
-2) A one-screen architecture map as Mermaid flowchart (max 12 nodes).
+export type AgentPromptTemplates = {
+  system: string;
+  user: string;
+  final: string;
+};
 
-Rules:
-- Use ONLY the tools get_repository_tree and get_file_contents via GitHub MCP.
-- Always fetch the file tree first.
-- Do not invent scripts, APIs, or modules that are not supported by tool results; use "_Not detected from repo._" instead.
-- Merge useful facts from an existing README into the template structure.
-- Keep sections short and clean. Prefer Quick start and Architecture.
-- Output language: ${language} (default English).
-- When done, respond with a single JSON object (no markdown fences) with keys:
-  readmeMarkdown (string),
-  architectureMermaid (string, raw mermaid without fences),
-  architectureMarkdownFile (string),
-  warnings (string array).
-- architectureMermaid must be a flowchart (TB or LR), max 12 nodes.
-- If Mermaid would be invalid, still return best-effort mermaid; server may retry/fix.
-- Prefer reading README, manifests (package.json, etc.), and entry points before other files.
-- For large repositories: after the tree, read at most 2–3 key files (README + package manifest + one entry), then STOP tools and emit final JSON.
-- Never browse dozens of files. Huge trees are truncated server-side — work with what you get.
-- After the tree and a few key files, STOP tools and emit the final JSON.
-- Do not keep browsing indefinitely.`;
+export function buildSystemPrompt(
+  language: string,
+  maxArchitectureNodes: number,
+  systemTemplate: string,
+): string {
+  return fillAgentPlaceholders(systemTemplate, {
+    language,
+    max_architecture_nodes: String(maxArchitectureNodes),
+  });
 }
 
-export function buildUserPrompt(input: {
-  owner: string;
-  repo: string;
-  ref?: string;
-  template: string;
-}): string {
+export function buildUserPrompt(
+  input: {
+    owner: string;
+    repo: string;
+    ref?: string;
+    template: string;
+  },
+  userTemplate: string,
+): string {
   const refLine = input.ref ? `ref: ${input.ref}` : "ref: (default branch)";
-  return `Generate onboarding docs for GitHub repo ${input.owner}/${input.repo} (${refLine}).
+  return fillAgentPlaceholders(userTemplate, {
+    owner: input.owner,
+    repo: input.repo,
+    ref_line: refLine,
+    template: input.template,
+  });
+}
 
-Fill this README template (keep all section headings; replace placeholders):
-
------ TEMPLATE START -----
-${input.template}
------ TEMPLATE END -----
-
-Put the Mermaid diagram into {{architecture_map}} as a fenced mermaid block inside readmeMarkdown, and also return raw mermaid in architectureMermaid.
-architectureMarkdownFile should be a short markdown file containing the diagram.
-`;
+export function buildFinalInstruction(finalTemplate: string): string {
+  return finalTemplate.trim();
 }

@@ -12,6 +12,8 @@ const demoBtn = document.querySelector<HTMLButtonElement>("#demo")!;
 const loaderEl = document.querySelector<HTMLDivElement>("#loader")!;
 const loaderTitle = document.querySelector<HTMLParagraphElement>("#loader-title")!;
 const statusEl = document.querySelector<HTMLParagraphElement>("#status")!;
+const warningsEl = document.querySelector<HTMLDivElement>("#warnings")!;
+const warningsList = document.querySelector<HTMLUListElement>("#warnings-list")!;
 const errorEl = document.querySelector<HTMLParagraphElement>("#error")!;
 const results = document.querySelector<HTMLElement>("#results")!;
 const mermaidOut = document.querySelector<HTMLDivElement>("#mermaid-out")!;
@@ -35,6 +37,25 @@ function clearError(): void {
   errorEl.textContent = "";
 }
 
+function clearWarnings(): void {
+  warningsEl.hidden = true;
+  warningsList.innerHTML = "";
+}
+
+function showWarnings(warnings: string[]): void {
+  if (!warnings.length) {
+    clearWarnings();
+    return;
+  }
+  warningsList.innerHTML = "";
+  for (const w of warnings) {
+    const li = document.createElement("li");
+    li.textContent = w;
+    warningsList.appendChild(li);
+  }
+  warningsEl.hidden = false;
+}
+
 function setResultsVisible(visible: boolean): void {
   results.hidden = !visible;
   document.body.classList.toggle("has-results", visible);
@@ -46,12 +67,14 @@ function setLoading(loading: boolean): void {
   if (loading) {
     statusEl.hidden = true;
     statusEl.textContent = "";
+    clearWarnings();
   }
 }
 
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   clearError();
+  clearWarnings();
   setResultsVisible(false);
   setLoading(true);
 
@@ -77,11 +100,7 @@ form.addEventListener("submit", async (ev) => {
 
     renderReadme(data.readmeMarkdown || "_Empty README._", readmeOut);
     setResultsVisible(true);
-
-    if (data.warnings?.length) {
-      statusEl.hidden = false;
-      statusEl.textContent = `Done (warnings: ${data.warnings.length}).`;
-    }
+    showWarnings(data.warnings ?? []);
   } catch (err) {
     showError(userMessageForError(err));
   } finally {

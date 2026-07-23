@@ -5,7 +5,7 @@ import type {
 } from "openai/resources/chat/completions";
 import type { LimitedMcpSession } from "../mcp/types.js";
 import type { GenerateDocsOutput } from "../types.js";
-import { buildSystemPrompt, buildUserPrompt } from "./prompts.js";
+import { buildFinalInstruction, buildSystemPrompt, buildUserPrompt } from "./prompts.js";
 import {
   createLlmClient,
   resolveLlmModel,
@@ -68,9 +68,6 @@ const openAiTools: ChatCompletionTool[] = [
   },
 ];
 
-const FINAL_JSON_INSTRUCTION =
-  "STOP calling tools. Based only on tool results already in this conversation, respond with ONLY one JSON object (no markdown fences) with keys: readmeMarkdown, architectureMermaid, architectureMarkdownFile, warnings. Fill the README template as best you can; use \"_Not detected from repo._\" where unknown.";
-
 function chatTemperature(fallback: number): number | undefined {
   const raw = process.env.OPENAI_TEMPERATURE?.trim();
   if (raw !== undefined && raw !== "") {
@@ -86,16 +83,27 @@ async function runDocwrightAgentChat(
   openai: LlmClient,
 ): Promise<GenerateDocsOutput> {
   const language = input.language ?? "en";
+  const finalInstruction = buildFinalInstruction(input.prompts.final);
   const messages: ChatCompletionMessageParam[] = [
-    { role: "system", content: buildSystemPrompt(language) },
+    {
+      role: "system",
+      content: buildSystemPrompt(
+        language,
+        input.limits.maxArchitectureNodes,
+        input.prompts.system,
+      ),
+    },
     {
       role: "user",
-      content: buildUserPrompt({
-        owner: input.owner,
-        repo: input.repo,
-        ref: input.ref,
-        template: input.template,
-      }),
+      content: buildUserPrompt(
+        {
+          owner: input.owner,
+          repo: input.repo,
+          ref: input.ref,
+          template: input.template,
+        },
+        input.prompts.user,
+      ),
     },
   ];
 
@@ -115,7 +123,7 @@ async function runDocwrightAgentChat(
     });
 
     if (forceFinal && !forcedFinalOnce) {
-      messages.push({ role: "user", content: FINAL_JSON_INSTRUCTION });
+      messages.push({ role: "user", content: finalInstruction });
       forcedFinalOnce = true;
       warnings.push("Forced final JSON (tool budget / enough context).");
     }
@@ -208,7 +216,11 @@ async function runDocwrightAgentChat(
             "\n\n[truncated: file exceeded maxFileBytes]";
           warnings.push(`Truncated ${String(args.path)}`);
         }
-        const capped = truncateToolResult(name, text);
+        const capped = truncateToolResult(
+          name,
+          text,
+          input.limits.maxToolResultChars,
+        );
         text = capped.text;
         if (capped.truncated) {
           warnings.push(`Truncated tool result: ${name}`);
@@ -228,7 +240,7 @@ async function runDocwrightAgentChat(
     const parsed = extractJsonObject(msg.content ?? "");
     if (!parsed?.readmeMarkdown) {
       if (!forcedFinalOnce) {
-        messages.push({ role: "user", content: FINAL_JSON_INSTRUCTION });
+        messages.push({ role: "user", content: finalInstruction });
         forcedFinalOnce = true;
       } else {
         messages.push({
