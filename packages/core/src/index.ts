@@ -25,6 +25,7 @@ export type { GenerateDocsInput } from "./agent/generateDocs.js";
 export { createGithubMcpSession, resolveMcpLaunchConfig } from "./mcp/session.js";
 export { withFileReadLimit } from "./mcp/types.js";
 export type { GithubMcpSession, McpToolName } from "./mcp/types.js";
-export { validateMermaidFlowchart } from "./agent/mermaid.js";
+export { createLlmClient, resolveLlmModel } from "./agent/llmClient.js";
+export type { LlmClient } from "./agent/llmClient.js";
 
 export const DOCWRIGHT_CORE_VERSION = "0.1.0";

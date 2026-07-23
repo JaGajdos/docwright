@@ -6,15 +6,20 @@ const { createMock } = vi.hoisted(() => ({
   createMock: vi.fn(),
 }));
 
-vi.mock("openai", () => ({
-  default: class OpenAI {
+vi.mock("openai", () => {
+  class MockOpenAI {
     chat = {
       completions: {
         create: createMock,
       },
     };
-  },
-}));
+  }
+  return {
+    default: MockOpenAI,
+    OpenAI: MockOpenAI,
+    AzureOpenAI: MockOpenAI,
+  };
+});
 
 import { runDocwrightAgent } from "./runAgent.js";
 

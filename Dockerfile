@@ -33,10 +33,10 @@ RUN curl -fsSL -o /tmp/mcp.tgz \
   && chmod +x /usr/local/bin/github-mcp-server \
   && rm /tmp/mcp.tgz
 
-ENV NODE_ENV=production
-ENV DOCWRIGHT_MCP_COMMAND=/usr/local/bin/github-mcp-server
-ENV DOCWRIGHT_MCP_ARGS=["stdio"]
-ENV PORT=8080
+ENV NODE_ENV=production \
+    DOCWRIGHT_MCP_COMMAND=/usr/local/bin/github-mcp-server \
+    DOCWRIGHT_MCP_ARGS='["stdio"]' \
+    PORT=8080
 
 COPY --from=build /app /app
 

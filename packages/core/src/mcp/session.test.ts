@@ -15,13 +15,11 @@ describe("resolveMcpLaunchConfig", () => {
     process.env.DOCWRIGHT_MCP_ARGS = prevArgs;
   });
 
-  it("respects DOCWRIGHT_MCP_COMMAND override", () => {
-    process.env.DOCWRIGHT_MCP_COMMAND = "github-mcp-server";
-    process.env.DOCWRIGHT_MCP_ARGS = "[]";
-    const cfg = resolveMcpLaunchConfig("tok");
-    expect(cfg.command).toBe("github-mcp-server");
-    expect(cfg.args).toEqual([]);
-    delete process.env.DOCWRIGHT_MCP_COMMAND;
+  it("defaults github-mcp-server binary to stdio args", () => {
+    process.env.DOCWRIGHT_MCP_COMMAND = "/usr/local/bin/github-mcp-server";
     delete process.env.DOCWRIGHT_MCP_ARGS;
+    const cfg = resolveMcpLaunchConfig("tok");
+    expect(cfg.args).toEqual(["stdio"]);
+    delete process.env.DOCWRIGHT_MCP_COMMAND;
   });
 });

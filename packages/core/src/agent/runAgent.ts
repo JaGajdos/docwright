@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
@@ -13,6 +12,7 @@ import {
   validateMermaidFlowchart,
 } from "./mermaid.js";
 import { buildSystemPrompt, buildUserPrompt } from "./prompts.js";
+import { createLlmClient, resolveLlmModel, type LlmClient } from "./llmClient.js";
 
 const ALLOWED_TOOLS = new Set(["get_repository_tree", "get_file_contents"]);
 
@@ -92,25 +92,39 @@ function extractJsonObject(text: string): AgentJson | null {
   }
 }
 
-function getOpenAI(): OpenAI {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    throw new Error("OPENAI_API_KEY is required.");
-  }
-  return new OpenAI({ apiKey: key });
+function getOpenAI(): LlmClient {
+  return createLlmClient();
 }
 
 function modelName(): string {
-  return process.env.OPENAI_MODEL?.trim() || "gpt-4o-mini";
+  return resolveLlmModel();
+}
+
+/** Some Azure deployments reject custom temperature — omit unless set. */
+function chatTemperature(fallback: number): number | undefined {
+  const raw = process.env.OPENAI_TEMPERATURE?.trim();
+  if (raw !== undefined && raw !== "") {
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  if (
+    process.env.AZURE_OPENAI_ENDPOINT?.trim() ||
+    process.env.OPENAI_BASE_URL?.trim()
+  ) {
+    return undefined;
+  }
+  return fallback;
 }
 
 async function repairMermaid(
-  openai: OpenAI,
+  openai: LlmClient,
   broken: string,
 ): Promise<string | null> {
   const completion = await openai.chat.completions.create({
     model: modelName(),
-    temperature: 0,
+    ...(chatTemperature(0) !== undefined
+      ? { temperature: chatTemperature(0) }
+      : {}),
     messages: [
       {
         role: "system",
@@ -151,7 +165,9 @@ export async function runDocwrightAgent(
   for (let round = 0; round < input.limits.maxToolRounds; round++) {
     const completion = await openai.chat.completions.create({
       model: modelName(),
-      temperature: 0.2,
+      ...(chatTemperature(0.2) !== undefined
+        ? { temperature: chatTemperature(0.2) }
+        : {}),
       tools: openAiTools,
       tool_choice: round === 0 ? "required" : "auto",
       messages,

@@ -22,7 +22,7 @@ function envWithToken(token: string): Record<string, string> {
  * Resolve how to spawn official GitHub MCP (stdio).
  * Override with DOCWRIGHT_MCP_COMMAND / DOCWRIGHT_MCP_ARGS (JSON array).
  * Default: docker run -i ghcr.io/github/github-mcp-server
- * Or DOCWRIGHT_MCP_COMMAND=github-mcp-server if binary is on PATH.
+ * Or DOCWRIGHT_MCP_COMMAND=/usr/local/bin/github-mcp-server with args ["stdio"].
  */
 export function resolveMcpLaunchConfig(
   githubToken: string,
@@ -38,6 +38,9 @@ export function resolveMcpLaunchConfig(
       } catch {
         args = argsRaw.split(/\s+/).filter(Boolean);
       }
+    } else if (/github-mcp-server/i.test(command)) {
+      // Official binary requires the `stdio` subcommand
+      args = ["stdio"];
     }
     return {
       command,
@@ -96,7 +99,14 @@ export async function createGithubMcpSession(
   });
 
   const client = new Client({ name: "docwright", version: "0.1.0" });
-  await client.connect(transport);
+  try {
+    await client.connect(transport);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `GitHub MCP failed to start (${launch.command} ${launch.args.join(" ")}): ${msg}. Check GITHUB_TOKEN and DOCWRIGHT_MCP_* on Railway.`,
+    );
+  }
 
   return {
     async callTool(name: McpToolName, args: Record<string, unknown>) {

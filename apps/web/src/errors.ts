@@ -4,6 +4,7 @@ const MESSAGES: Record<string, string> = {
   RATE_LIMITED: "Príliš veľa požiadaviek. Skús neskôr.",
   TIMEOUT: "Dočasný problém. Skús znova.",
   LLM_UNAVAILABLE: "Dočasný problém. Skús znova.",
+  MCP_UNAVAILABLE: "GitHub MCP nedostupný. Skontroluj GITHUB_TOKEN na Railway.",
   AGENT_LIMIT: "Dočasný problém. Skús znova.",
   UNAUTHORIZED: "Dočasný problém. Skús znova.",
 };

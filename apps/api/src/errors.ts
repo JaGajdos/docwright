@@ -32,8 +32,11 @@ export function mapGenerateError(err: unknown): {
   if (/timeout|aborted/i.test(message)) {
     return { status: 504, body: apiError("TIMEOUT", message) };
   }
-  if (/OPENAI|LLM|rate_limit|api key/i.test(message)) {
+  if (/OPENAI|LLM|rate_limit|api key|Azure/i.test(message)) {
     return { status: 502, body: apiError("LLM_UNAVAILABLE", message) };
+  }
+  if (/MCP|github-mcp|GITHUB_TOKEN/i.test(message)) {
+    return { status: 502, body: apiError("MCP_UNAVAILABLE", message) };
   }
   return { status: 502, body: apiError("LLM_UNAVAILABLE", message) };
 }
