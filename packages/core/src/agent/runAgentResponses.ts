@@ -310,6 +310,20 @@ export async function runDocwrightAgentResponses(
 
     const text = outputText(response);
     const parsed = extractJsonObject(text);
+    debugLog("agent-responses", "final text extract", {
+      round,
+      textChars: text.length,
+      textPreview: text.slice(0, 1500),
+      parsedOk: Boolean(parsed?.readmeMarkdown),
+      parsedKeys: parsed ? Object.keys(parsed) : [],
+      readmeChars: parsed?.readmeMarkdown?.length ?? 0,
+      mermaidChars: parsed?.architectureMermaid?.length ?? 0,
+      warnings: parsed?.warnings ?? [],
+    });
+    // Always visible in Railway Logs while diagnosing JSON parse
+    console.error(
+      `[docwright] [agent-responses] outputText chars=${text.length} parsed=${Boolean(parsed?.readmeMarkdown)} preview=${JSON.stringify(text.slice(0, 800))}`,
+    );
     if (!parsed?.readmeMarkdown) {
       nextInput = [
         {
