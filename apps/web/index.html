@@ -222,6 +222,140 @@
         </div>
       </section>
 
+      <section
+        id="compare"
+        class="compare"
+        aria-labelledby="compare-heading"
+      >
+        <div class="compare-intro">
+          <h2 id="compare-heading" data-i18n="compareHeading">
+            How Docwright compares
+          </h2>
+          <p data-i18n="compareSub">
+            Deeper look at Docwright vs main competitors.
+          </p>
+        </div>
+
+        <div class="compare-scroll">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="compareColTool">Tool</th>
+                <th scope="col" data-i18n="compareColNoLogin">No login</th>
+                <th scope="col" data-i18n="compareColArch">
+                  Architecture diagram
+                </th>
+                <th scope="col" data-i18n="compareColLang">Output language</th>
+                <th scope="col" data-i18n="compareColHalluc">
+                  Anti-hallucination
+                </th>
+                <th scope="col" data-i18n="compareColPrice">Price</th>
+                <th scope="col" data-i18n="compareColOss">Open source</th>
+                <th scope="col" data-i18n="compareColOutput">Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="compare-row--ours">
+                <th scope="row" data-i18n="compareDw">Docwright (ours)</th>
+                <td data-i18n="compareDwNoLogin">Yes — no account</td>
+                <td data-i18n="compareDwArch">
+                  Yes — Mermaid tailored to the repo
+                </td>
+                <td data-i18n="compareDwLang">Yes — EN/SK (more planned)</td>
+                <td data-i18n="compareDwHalluc">
+                  Yes — badges come from real GitHub API / workflow data, never
+                  guessed
+                </td>
+                <td data-i18n="compareDwPrice">
+                  Free (Railway ~$5/mo after credits)
+                </td>
+                <td data-i18n="compareDwOss">Yes — our code; private repo</td>
+                <td data-i18n="compareDwOutput">
+                  README + diagram, download / copy
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" data-i18n="compareDeep">DeepWiki (Cognition)</th>
+                <td data-i18n="compareDeepNoLogin">
+                  Yes — for public repos (deepwiki.com URL)
+                </td>
+                <td data-i18n="compareDeepArch">Yes</td>
+                <td data-i18n="compareDeepLang">Unconfirmed</td>
+                <td data-i18n="compareDeepHalluc">Unknown (black box)</td>
+                <td data-i18n="compareDeepPrice">Free for public repos</td>
+                <td data-i18n="compareDeepOss">
+                  No (proprietary; community clone exists separately)
+                </td>
+                <td data-i18n="compareDeepOutput">
+                  Hosted wiki + chat over code
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" data-i18n="compareMint">
+                  Mintlify (repo-to-docs)
+                </th>
+                <td data-i18n="compareMintNoLogin">Yes (mintlify.com URL)</td>
+                <td data-i18n="compareMintArch">
+                  Not primary — structured docs instead
+                </td>
+                <td data-i18n="compareMintLang">Unknown</td>
+                <td data-i18n="compareMintHalluc">Unknown</td>
+                <td data-i18n="compareMintPrice">
+                  Free base; AI auto-update is paid
+                </td>
+                <td data-i18n="compareMintOss">No</td>
+                <td data-i18n="compareMintOutput">
+                  Hosted / cloneable docs site
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" data-i18n="compareCr">CodeRabbit</th>
+                <td data-i18n="compareCrNoLogin">
+                  No — GitHub App install required
+                </td>
+                <td data-i18n="compareCrArch">
+                  Yes, but only as PR context — not whole-repo README
+                </td>
+                <td data-i18n="compareCrLang">Unknown</td>
+                <td data-i18n="compareCrHalluc">Unknown</td>
+                <td data-i18n="compareCrPrice">
+                  Free (review); Pro ~$24–30/dev/mo
+                </td>
+                <td data-i18n="compareCrOss">No</td>
+                <td data-i18n="compareCrOutput">PR comments</td>
+              </tr>
+              <tr>
+                <th scope="row" data-i18n="compareRcg">ReadmeCodeGen.com</th>
+                <td data-i18n="compareRcgNoLogin">Yes</td>
+                <td data-i18n="compareRcgArch">Yes (file-tree / Mermaid)</td>
+                <td data-i18n="compareRcgLang">Unknown</td>
+                <td data-i18n="compareRcgHalluc">Unknown</td>
+                <td data-i18n="compareRcgPrice">Free</td>
+                <td data-i18n="compareRcgOss">No</td>
+                <td data-i18n="compareRcgOutput">Downloadable README</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="compare-notes">
+          <p data-i18n="compareParity">
+            Market fit: all of these (except CodeRabbit) offer no-login access
+            for public repos and generate some form of diagram/docs with an LLM
+            over repo content — Docwright follows that proven pattern.
+          </p>
+          <p data-i18n="compareDiff">
+            Where Docwright stands out: you can verify that badges (license /
+            version / CI) are real GitHub data, not model guesses — others
+            either skip this or keep it opaque. Docwright also offers an
+            explicit output-language choice and a readable pipeline codebase.
+            DeepWiki has far broader reach (50k+ indexed repos, code chat, MCP)
+            — Docwright is intentionally narrower: one README + one diagram on
+            demand, not a hosted wiki platform.
+          </p>
+        </div>
+      </section>
+
       <footer class="footer">
         <p data-i18n="footer">
           Docwright uses AI to draft documentation from public repository
