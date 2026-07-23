@@ -29,8 +29,15 @@ describe("agentConfig", () => {
   });
 
   it("builds prompts from templates", () => {
-    const system = buildSystemPrompt("sk", 10, "Lang={{language}} nodes={{max_architecture_nodes}}");
-    expect(system).toBe("Lang=sk nodes=10");
+    const system = buildSystemPrompt(
+      "sk",
+      10,
+      "Lang={{language}} code={{language_code}} nodes={{max_architecture_nodes}} miss={{not_detected}}",
+    );
+    expect(system).toContain("Slovak");
+    expect(system).toContain("code=sk");
+    expect(system).toContain("nodes=10");
+    expect(system).toContain("V repo nezistené");
 
     const user = buildUserPrompt(
       { owner: "o", repo: "r", template: "# T {{project_name}}" },

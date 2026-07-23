@@ -1,6 +1,12 @@
 import "./styles.css";
 import { generateDocs } from "./api.js";
 import { userMessageForError } from "./errors.js";
+import {
+  applyLocale,
+  getLocale,
+  normalizeLocale,
+  t,
+} from "./i18n.js";
 import { setGenerateLoading } from "./loading.js";
 import { renderMermaid, renderReadme } from "./render.js";
 
@@ -22,11 +28,21 @@ const mermaidFallback = document.querySelector<HTMLPreElement>("#mermaid-fallbac
 const readmeOut = document.querySelector<HTMLElement>("#readme-out")!;
 const scanRadios = document.querySelectorAll<HTMLInputElement>('input[name="scan"]');
 
-const DEMO_REPO = "https://github.com/sindresorhus/is";
+const DEMO_REPO = "https://github.com/JaGajdos/docwright";
+
+const savedLang = normalizeLocale(localStorage.getItem("docwright.lang"));
+languageSelect.value = savedLang;
+applyLocale(savedLang);
 
 demoBtn.addEventListener("click", () => {
   repoInput.value = DEMO_REPO;
   repoInput.focus();
+});
+
+languageSelect.addEventListener("change", () => {
+  const locale = normalizeLocale(languageSelect.value);
+  localStorage.setItem("docwright.lang", locale);
+  applyLocale(locale);
 });
 
 function selectedScan(): "quick" | "deep" {
@@ -80,7 +96,13 @@ function setResultsVisible(visible: boolean): void {
 }
 
 function setLoading(loading: boolean): void {
-  setGenerateLoading(submitBtn, loaderTitle, loading, undefined, loaderEl);
+  setGenerateLoading(
+    submitBtn,
+    loaderTitle,
+    loading,
+    t("loaderTitle"),
+    loaderEl,
+  );
   document.body.classList.toggle("is-loading", loading);
   if (loading) {
     statusEl.hidden = true;
@@ -96,15 +118,16 @@ form.addEventListener("submit", async (ev) => {
   setResultsVisible(false);
   setLoading(true);
 
-  // Deep scan is visual-only for now — always run Quick path.
   if (selectedScan() === "deep") {
     syncProNudge();
   }
 
+  const language = normalizeLocale(languageSelect.value);
+
   try {
     const data = await generateDocs({
       repo: repoInput.value.trim(),
-      language: languageSelect.value,
+      language,
     });
 
     const diagramSource =
@@ -117,15 +140,14 @@ form.addEventListener("submit", async (ev) => {
     } else {
       mermaidOut.innerHTML = "";
       mermaidFallback.hidden = false;
-      mermaidFallback.textContent =
-        diagramSource || "No architecture diagram returned.";
+      mermaidFallback.textContent = diagramSource || t("noDiagram");
     }
 
-    renderReadme(data.readmeMarkdown || "_Empty README._", readmeOut);
+    renderReadme(data.readmeMarkdown || t("emptyReadme"), readmeOut);
     setResultsVisible(true);
     showWarnings(data.warnings ?? []);
   } catch (err) {
-    showError(userMessageForError(err));
+    showError(userMessageForError(err, getLocale()));
   } finally {
     setLoading(false);
   }

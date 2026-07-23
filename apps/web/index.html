@@ -17,41 +17,55 @@
       <header class="topbar">
         <div class="brand-block">
           <p class="brand">Docwright</p>
-          <p class="tagline">The docs your repo never got around to writing.</p>
+          <p class="tagline" data-i18n="tagline">
+            The docs your repo never got around to writing.
+          </p>
         </div>
 
         <form id="form" class="form" autocomplete="off">
-          <label class="sr-only" for="repo">GitHub repository</label>
+          <label class="sr-only" for="repo" data-i18n="repoLabel"
+            >GitHub repository</label
+          >
           <div class="composer">
             <input
               id="repo"
               name="repo"
               type="text"
+              data-i18n-placeholder="repoPlaceholder"
               placeholder="https://github.com/owner/repo"
               required
             />
-            <button id="submit" type="submit">Generate</button>
+            <button id="submit" type="submit" data-i18n="generate">
+              Generate
+            </button>
           </div>
           <div class="toolbar">
             <label class="lang">
-              Language
+              <span data-i18n="language">Language</span>
               <select id="language" name="language">
                 <option value="en" selected>EN</option>
                 <option value="sk">SK</option>
               </select>
             </label>
-            <fieldset class="scan-mode" aria-label="Scan depth">
-              <legend class="sr-only">Scan depth</legend>
+            <fieldset
+              class="scan-mode"
+              data-i18n-aria-label="scanDepth"
+              aria-label="Scan depth"
+            >
+              <legend class="sr-only" data-i18n="scanDepth">Scan depth</legend>
               <label class="scan-option">
                 <input type="radio" name="scan" value="quick" checked />
-                <span>Quick scan</span>
+                <span data-i18n="scanQuick">Quick scan</span>
               </label>
               <label class="scan-option scan-option--pro">
                 <input type="radio" name="scan" value="deep" />
-                <span>Deep scan <em>Pro</em></span>
+                <span
+                  ><span data-i18n="scanDeep">Deep scan</span>
+                  <em data-i18n="scanPro">Pro</em></span
+                >
               </label>
             </fieldset>
-            <button type="button" id="demo" class="linkish">
+            <button type="button" id="demo" class="linkish" data-i18n="tryExample">
               Try example repo
             </button>
           </div>
@@ -59,11 +73,11 @@
       </header>
 
       <div id="pro-nudge" class="pro-nudge" hidden>
-        <p>
+        <p data-i18n-html="proNudgeHtml">
           <strong>Deep scan</strong> reads more of the repo (packages, entry
           points, CI) and drafts richer docs — available on Pro.
         </p>
-        <a class="pro-nudge-cta" href="#plans">See plans</a>
+        <a class="pro-nudge-cta" href="#plans" data-i18n="seePlans">See plans</a>
       </div>
 
       <p id="status" class="status" hidden></p>
@@ -73,8 +87,10 @@
         <div class="loader-orbit" aria-hidden="true">
           <span></span><span></span><span></span>
         </div>
-        <p id="loader-title" class="loader-title">Generating docs…</p>
-        <p class="loader-hint">
+        <p id="loader-title" class="loader-title" data-i18n="loaderTitle">
+          Generating docs…
+        </p>
+        <p class="loader-hint" data-i18n="loaderHint">
           Reading the repo and drafting README + architecture. This can take a
           minute or two.
         </p>
@@ -83,40 +99,54 @@
       <main id="results" class="workspace" hidden>
         <article class="doc">
           <section class="doc-readme" aria-label="README">
-            <h2 class="doc-section-title">README</h2>
+            <h2 class="doc-section-title" data-i18n="readme">README</h2>
             <div id="readme-out" class="readme-out prose"></div>
           </section>
 
           <section class="doc-diagram" aria-label="Architecture">
-            <h2 class="doc-section-title">Architecture</h2>
+            <h2 class="doc-section-title" data-i18n="architecture">
+              Architecture
+            </h2>
             <div id="mermaid-out" class="mermaid-out"></div>
             <pre id="mermaid-fallback" class="fallback" hidden></pre>
           </section>
 
           <div id="warnings" class="warnings" hidden>
-            <p class="warnings-title">Generated with notes</p>
+            <p class="warnings-title" data-i18n="warningsTitle">
+              Generated with notes
+            </p>
             <ul id="warnings-list" class="warnings-list"></ul>
           </div>
         </article>
 
-        <aside class="upsell" aria-label="Upgrade scan">
+        <aside
+          class="upsell"
+          data-i18n-aria-label="upsellAria"
+          aria-label="Upgrade scan"
+        >
           <div class="upsell-copy">
-            <p class="upsell-kicker">Go deeper</p>
-            <h2 class="upsell-title">This was a Quick scan</h2>
-            <p class="upsell-text">
+            <p class="upsell-kicker" data-i18n="upsellKicker">Go deeper</p>
+            <h2 class="upsell-title" data-i18n="upsellTitle">
+              This was a Quick scan
+            </h2>
+            <p class="upsell-text" data-i18n="upsellText">
               Free scans sample the tree and a few key files. Pro Deep scan
               walks packages, apps, and CI so README and architecture match
               larger monorepos.
             </p>
           </div>
-          <a class="upsell-cta" href="#plans">Unlock Deep scan</a>
+          <a class="upsell-cta" href="#plans" data-i18n="upsellCta"
+            >Unlock Deep scan</a
+          >
         </aside>
       </main>
 
       <section id="plans" class="plans" aria-labelledby="plans-heading">
         <div class="plans-intro">
-          <h2 id="plans-heading">How Docwright scales</h2>
-          <p>
+          <h2 id="plans-heading" data-i18n="plansHeading">
+            How Docwright scales
+          </h2>
+          <p data-i18n="plansIntro">
             Monetize depth and continuity — not just “another README.” Free
             proves the product; Pro sells better scanning and always-on docs.
           </p>
@@ -124,46 +154,67 @@
 
         <div class="plans-grid">
           <article class="plan">
-            <h3>Free</h3>
-            <p class="plan-price">€0</p>
-            <p class="plan-desc">Public repos, Quick scan</p>
+            <h3 data-i18n="planFree">Free</h3>
+            <p class="plan-price" data-i18n="planFreePrice">€0</p>
+            <p class="plan-desc" data-i18n="planFreeDesc">
+              Public repos, Quick scan
+            </p>
             <ul>
-              <li>Tree + a few key files</li>
-              <li>README + architecture map</li>
-              <li>Rate-limited generates</li>
+              <li data-i18n="planFree1">Tree + a few key files</li>
+              <li data-i18n="planFree2">README + architecture map</li>
+              <li data-i18n="planFree3">Rate-limited generates</li>
             </ul>
-            <p class="plan-foot">What you use today</p>
+            <p class="plan-foot" data-i18n="planFreeFoot">What you use today</p>
           </article>
 
           <article class="plan plan--featured">
-            <p class="plan-badge">Best fit</p>
-            <h3>Pro</h3>
-            <p class="plan-price">€29<span>/mo</span></p>
-            <p class="plan-desc">Deep project scanning</p>
+            <p class="plan-badge" data-i18n="planBadge">Best fit</p>
+            <h3 data-i18n="planPro">Pro</h3>
+            <p class="plan-price">
+              €29<span data-i18n="planProPriceSuffix">/mo</span>
+            </p>
+            <p class="plan-desc" data-i18n="planProDesc">
+              Deep project scanning
+            </p>
             <ul>
-              <li>Deep scan: more files &amp; packages</li>
-              <li>Larger repos without early cutoff</li>
-              <li>Private repos (GitHub App)</li>
-              <li>Custom prompt &amp; README template</li>
-              <li>Export + higher limits</li>
+              <li data-i18n="planPro1">Deep scan: more files &amp; packages</li>
+              <li data-i18n="planPro2">Larger repos without early cutoff</li>
+              <li data-i18n="planPro3">Private repos (GitHub App)</li>
+              <li data-i18n="planPro4">Custom prompt &amp; README template</li>
+              <li data-i18n="planPro5">Export + higher limits</li>
             </ul>
-            <button type="button" class="plan-cta" id="plan-pro" disabled>
+            <button
+              type="button"
+              class="plan-cta"
+              id="plan-pro"
+              disabled
+              data-i18n="comingSoon"
+            >
               Coming soon
             </button>
           </article>
 
           <article class="plan">
-            <h3>Team</h3>
-            <p class="plan-price">€99<span>/mo</span></p>
-            <p class="plan-desc">Docs that stay current</p>
+            <h3 data-i18n="planTeam">Team</h3>
+            <p class="plan-price">
+              €99<span data-i18n="planProPriceSuffix">/mo</span>
+            </p>
+            <p class="plan-desc" data-i18n="planTeamDesc">
+              Docs that stay current
+            </p>
             <ul>
-              <li>Everything in Pro</li>
-              <li>PR Action on every merge</li>
-              <li>Docs drift alerts</li>
-              <li>Shared org templates</li>
-              <li>Priority model / queue</li>
+              <li data-i18n="planTeam1">Everything in Pro</li>
+              <li data-i18n="planTeam2">PR Action on every merge</li>
+              <li data-i18n="planTeam3">Docs drift alerts</li>
+              <li data-i18n="planTeam4">Shared org templates</li>
+              <li data-i18n="planTeam5">Priority model / queue</li>
             </ul>
-            <button type="button" class="plan-cta plan-cta--ghost" disabled>
+            <button
+              type="button"
+              class="plan-cta plan-cta--ghost"
+              disabled
+              data-i18n="comingSoon"
+            >
               Coming soon
             </button>
           </article>
@@ -171,7 +222,7 @@
       </section>
 
       <footer class="footer">
-        <p>
+        <p data-i18n="footer">
           Docwright uses AI to draft documentation from public repository
           content. Output may be incomplete or incorrect — always review before
           use. Only public GitHub repositories are supported. Rate limits apply.

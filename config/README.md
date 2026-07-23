@@ -19,7 +19,7 @@ Edit these files to change how Docwright talks to the LLM and how much repo cont
 
 ## Prompt placeholders
 
-**system.md:** `{{language}}`, `{{max_architecture_nodes}}`  
+**system.md:** `{{language}}`, `{{language_code}}`, `{{not_detected}}`, `{{max_architecture_nodes}}`  
 
 **user.md:** `{{owner}}`, `{{repo}}`, `{{ref_line}}`, `{{template}}`  
 

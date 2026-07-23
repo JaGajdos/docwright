@@ -34,7 +34,7 @@ export async function generateDocs(input: {
   try {
     data = await res.json();
   } catch {
-    throw new Error("Dočasný problém. Skús znova.");
+    throw new Error("JSON_PARSE");
   }
 
   if (!res.ok) {

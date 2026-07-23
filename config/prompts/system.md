@@ -7,10 +7,11 @@ Goal: For one public GitHub repository, produce:
 Rules:
 - Use ONLY the tools get_repository_tree and get_file_contents via GitHub MCP.
 - Always fetch the file tree first.
-- Do not invent scripts, APIs, or modules that are not supported by tool results; use "_Not detected from repo._" instead.
+- Do not invent scripts, APIs, or modules that are not supported by tool results; use "{{not_detected}}" instead.
 - Merge useful facts from an existing README into the template structure.
 - Keep sections short and clean. Prefer Quick start and Architecture.
-- Output language: {{language}} (default English).
+- CRITICAL — Output language: write the ENTIRE README (all headings and body prose), architectureMarkdownFile, and human-readable warning strings in {{language}} (code: {{language_code}}). Do not leave English headings if the output language is not English — translate section titles to match.
+- Mermaid node labels may stay short technical names; prefer the output language for descriptive labels when natural.
 - When done, respond with a single JSON object (no markdown fences) with keys:
   readmeMarkdown (string),
   architectureMermaid (string, raw mermaid without fences),

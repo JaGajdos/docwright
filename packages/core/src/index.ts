@@ -16,6 +16,7 @@ export type {
   LoadedAgentConfig,
 } from "./agentConfig.js";
 export { parseRepoInput } from "./parseRepo.js";
+export { resolveOutputLanguage } from "./language.js";
 export {
   fillTemplate,
   listTemplatePlaceholders,

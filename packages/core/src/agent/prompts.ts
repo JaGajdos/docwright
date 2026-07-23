@@ -1,4 +1,5 @@
 import { fillAgentPlaceholders } from "../agentConfig.js";
+import { resolveOutputLanguage } from "../language.js";
 
 export type AgentPromptTemplates = {
   system: string;
@@ -11,8 +12,11 @@ export function buildSystemPrompt(
   maxArchitectureNodes: number,
   systemTemplate: string,
 ): string {
+  const lang = resolveOutputLanguage(language);
   return fillAgentPlaceholders(systemTemplate, {
-    language,
+    language: lang.label,
+    language_code: lang.code,
+    not_detected: lang.notDetected,
     max_architecture_nodes: String(maxArchitectureNodes),
   });
 }

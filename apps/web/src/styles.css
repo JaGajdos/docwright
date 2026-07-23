@@ -724,6 +724,9 @@ button[type="submit"]:disabled {
 }
 
 .plan {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   padding: 1.5rem 1.35rem 1.6rem;
   border: 1px solid var(--line);
   border-radius: 20px;
@@ -762,12 +765,13 @@ button[type="submit"]:disabled {
 }
 
 .plan ul {
-  margin: 0 0 1.35rem;
+  margin: 0;
   padding-left: 1.15rem;
   color: var(--ink);
   font-size: var(--text-sm);
   line-height: 1.55;
   font-weight: 500;
+  flex: 1 1 auto;
 }
 
 .plan li {
@@ -775,7 +779,8 @@ button[type="submit"]:disabled {
 }
 
 .plan-foot {
-  margin: 0;
+  margin: auto 0 0;
+  padding-top: 1.35rem;
   color: var(--muted);
   font-size: 1rem;
   font-weight: 600;
@@ -802,9 +807,10 @@ button[type="submit"]:disabled {
 
 .plan-cta {
   width: 100%;
+  margin-top: auto;
+  padding: 0.85rem 1rem;
   border: 0;
   border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
   background: var(--accent);
   color: #fff;
   font-weight: 700;
