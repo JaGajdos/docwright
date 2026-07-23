@@ -20,41 +20,64 @@ Default šablóna súbor: [`../templates/readme.md`](../templates/readme.md).
 
 ---
 
-## 2. MCP na Railway — **stdio child process** (nie Docker)
+## 2. MCP na Railway — **stdio child process** + provider registry
 
 | | **stdio child** (zvolené) | Docker sidecar |
 |--|---------------------------|----------------|
 | Setup na Railway | Jednoduchší (1 service) | Image + Docker vrstva |
 | Latencia / ops | Nižšia komplexita | Ťažšie debug |
-| Oficiálny server | Spustiť binárku / `npx` / Go build ako child | `docker run ghcr.io/github/github-mcp-server` |
+| Oficiálny server | Spustiť binárku / image ako child | Samostatný Docker service |
 
-**Rozhodnutie:** API/core spustí **GitHub MCP ako stdio child** cez MCP SDK (`StdioClientTransport`).
+**Rozhodnutie:** API/core spustí MCP ako **stdio child** cez MCP SDK (`StdioClientTransport`).
 
-Default spawn (keď nie je `DOCWRIGHT_MCP_COMMAND`):
+Default spawn GitHub (keď nie je `DOCWRIGHT_MCP_COMMAND`):
 ```bash
 docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server
 ```
-(oficiálny image; stále stdio z pohľadu Node klienta — nie samostatný Docker sidecar service.)
+(oficiálny image; stále stdio z pohľadu Node klienta.)
 
-Override: `DOCWRIGHT_MCP_COMMAND=github-mcp-server` (binárka na PATH).
+Override: `DOCWRIGHT_MCP_COMMAND=/usr/local/bin/github-mcp-server` + `DOCWRIGHT_MCP_ARGS=["stdio"]` (Dockerfile na Railway).
+
+### 2.1 MCP provider registry
+
+| | |
+|--|--|
+| API | `registerMcpProvider` / `resolveMcpProvider` / `createMcpSession` |
+| Výber | 1) explicit `mcpProvider` · 2) host z URL · 3) `DOCWRIGHT_MCP_PROVIDER` · 4) `github` |
+| Implementované | **`github`** (`github.com`) |
+| Rozšírenie | nový provider + `hosts: ["gitlab.com", …]` — [`mcp/README.md`](../packages/core/src/mcp/README.md) |
 
 ---
 
 ## 3. Agent loop (uzavreté)
 
-### 3.1 Model
-- OpenAI ChatGPT, default `gpt-4o-mini` (env `OPENAI_MODEL`).
-- Tool-calling API (nie jeden slepý prompt bez tools).
+### 3.1 LLM — pluggable provider (default GPT)
+
+| `DOCWRIGHT_LLM_PROVIDER` | Poznámka |
+|--------------------------|----------|
+| `openai` (**default**) | Public OpenAI, alebo Azure ak je `AZURE_OPENAI_ENDPOINT` |
+| `azure` | Vynútený Azure OpenAI |
+| `openai-compatible` | `OPENAI_BASE_URL` (Ollama, Groq, vLLM, …) — Chat Completions |
+
+| Položka | Hodnota |
+|---------|---------|
+| Public OpenAI model | `OPENAI_MODEL` default `gpt-4o-mini` |
+| Azure | `AZURE_OPENAI_*` + Responses API (`DOCWRIGHT_LLM_API=responses` default pri Azure) |
+| Agent API | `chat` (tool-calling) alebo `responses` (Azure gpt-5.6-*) |
+
+Detail: [`packages/core/src/llm/README.md`](../packages/core/src/llm/README.md).
 
 ### 3.2 Limity slučky
 
 | Parameter | Default |
 |-----------|---------|
-| `max_tool_rounds` | **12** |
-| `max_files_read` | **25** (z `04`) |
-| Po vyčerpaní rounds bez finálneho README | chyba `502` / `AGENT_LIMIT` |
+| `maxToolRounds` | **8** |
+| `maxFilesRead` | **8** |
+| `maxToolResultChars` | **12_000** |
+| Po vyčerpaní rounds bez finálneho README | `AGENT_LIMIT` / 502 |
 
-Jeden „round“ = model odpoveď + prípadné tool calls + tool results späť do modelu.
+Jeden „round“ = model odpoveď + prípadné tool calls + tool results späť do modelu.  
+Pri veľkom tree: skorší force-final (budget).
 
 ### 3.3 Tools (schéma pre model)
 
@@ -95,30 +118,18 @@ Agent smie volať **iba** tieto MCP tools (mapované 1:1):
 2. Podľa priority z `04` volať `get_file_contents` (do limitu).
 3. Až potom vyproduovať **finálny výstup** (bez ďalších tools).
 
-### 3.5 System prompt (kanonický text)
+### 3.5 System / user / final prompty (súbory)
 
-```text
-You are Docwright, an onboarding docs agent.
+Kanonický text **nie je** len v tomto dokumente — žije v:
 
-Goal: For one public GitHub repository, produce:
-1) A README filled from the provided Markdown template (placeholders like {{project_name}}).
-2) A one-screen architecture map as Mermaid flowchart (max 12 nodes).
+| Súbor | Účel |
+|-------|------|
+| [`config/prompts/system.md`](../config/prompts/system.md) | systémové pravidlá (`{{language}}`, `{{max_architecture_nodes}}`, …) |
+| [`config/prompts/user.md`](../config/prompts/user.md) | user prompt + README template |
+| [`config/prompts/final.md`](../config/prompts/final.md) | force-final JSON |
+| [`config/agent.json`](../config/agent.json) | limity + cesty k promptom |
 
-Rules:
-- Use ONLY the tools get_repository_tree and get_file_contents via GitHub MCP.
-- Always fetch the file tree first.
-- Do not invent scripts, APIs, or modules that are not supported by tool results; use "_Not detected from repo._" instead.
-- Merge useful facts from an existing README into the template structure.
-- Keep sections short and clean. Prefer Quick start and Architecture.
-- Output language: {{language}} (default English).
-- When done, respond with a single JSON object (no markdown fences) with keys:
-  readmeMarkdown (string),
-  architectureMermaid (string, raw mermaid without fences),
-  architectureMarkdownFile (string),
-  warnings (string array).
-- architectureMermaid must be a flowchart (TB or LR), max 12 nodes.
-- If Mermaid would be invalid, still return best-effort mermaid; server may retry/fix.
-```
+Placeholdery a priorita limitov: [`config/README.md`](../config/README.md).
 
 Placeholdery `{{language}}` doplní runtime.  
 Template body pošle user/system ako príloha (obsah `templates/readme.md`).
@@ -171,8 +182,9 @@ Idempotencia: jeden Docwright komentár na PR; `synchronize` = update toho isté
 ## 6. Acceptance
 
 - [ ] `templates/readme.md` existuje a agent ho používa ako default
-- [ ] Agent: max 12 tool rounds; len 2 MCP tools; system prompt §3.5
-- [ ] MCP na Railway ako **stdio child**
+- [ ] Agent: limity z `config/agent.json` (default max **8** tool rounds); len 2 MCP tools; prompty v `config/prompts/`
+- [ ] MCP: stdio child + provider registry (default `github`)
+- [ ] LLM: pluggable (`openai` / `azure` / `openai-compatible`)
 - [ ] Web: `mermaid` na render mapy
 - [ ] Action: sticky flow §5
 - [ ] Monorepo: **npm workspaces** + `package-lock.json`

@@ -131,8 +131,13 @@ Bez toho MCP nevie tool `get_repository_tree` (je v toolsete `git`, nie v defaul
 | `DOCWRIGHT_RATE_LIMIT_PER_HOUR` | `5` |
 | `DOCWRIGHT_RATE_LIMIT_PER_DAY` | `20` |
 | `DOCWRIGHT_MAX_FILES_READ` | `8` (alebo hodnota v `config/agent.json`) |
+| `DOCWRIGHT_MAX_TOOL_ROUNDS` | `8` |
 | `DOCWRIGHT_AGENT_CONFIG` | cesta k `config/agent.json` |
-| `OPENAI_MODEL` | len pri **public** OpenAI (nie Azure) |
+| `DOCWRIGHT_LLM_PROVIDER` | `openai` (default) \| `azure` \| `openai-compatible` |
+| `DOCWRIGHT_LLM_API` | `chat` \| `responses` (Azure default `responses`) |
+| `DOCWRIGHT_MCP_PROVIDER` | `github` (default); alebo body `mcpProvider` |
+| `OPENAI_MODEL` | len pri **public** OpenAI / compatible (nie Azure deployment) |
+| `OPENAI_BASE_URL` | pre `openai-compatible` |
 
 ### 2.2b Agent prompt + limity (súbory)
 

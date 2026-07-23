@@ -13,11 +13,11 @@ Nadväzuje na `04`–`09`. Zadanie: [`../zadanie.txt`](../zadanie.txt).
 |--------|--------|------|
 | Jazyk | **TypeScript** | Jeden jazyk pre web + API + shared |
 | Runtime | **Node.js 20+** | Railway + Actions |
-| Frontend | **Vite + React** (alebo Vite + plain TS) | Statický build → GitHub Pages |
-| Backend | **Hono** alebo **Express** (jeden HTTP server) | Malý `POST /v1/generate` |
-| Shared | `packages/core` — agent orchestration + template + limity | Action volá API; core beží na Railway |
-| Backend | **Hono/Express** + **GitHub MCP** + OpenAI agent | Railway |
-| LLM | **OpenAI ChatGPT API** (§2) | |
+| Frontend | **Vite + plain TypeScript** | Statický build → GitHub Pages |
+| Backend | **Hono** (jeden HTTP server) | `POST /v1/generate` |
+| Shared | `packages/core` — agent + LLM/MCP providers + template + limity | Action volá API; core beží na Railway |
+| Ingest | **MCP provider** (default GitHub stdio) + agent | Railway |
+| LLM | **Pluggable** (`openai` / `azure` / `openai-compatible`) — §2 | |
 | Testy | **Vitest** | Rýchle unit/integration |
 
 
@@ -28,11 +28,12 @@ Nadväzuje na `04`–`09`. Zadanie: [`../zadanie.txt`](../zadanie.txt).
 ```text
 /
   doc/
+  config/              # agent.json + prompts/*.md
   packages/
-    core/              # agent + MCP client + template/generate
+    core/              # agent + LLM/MCP providers + template
   apps/
     api/               # HTTP + štart MCP → Railway
-    web/               # Vite → GitHub Pages
+    web/               # Vite (plain TS) → GitHub Pages
   action/              # volá Railway API + sticky comment
   templates/
     readme.md
@@ -42,21 +43,24 @@ Nadväzuje na `04`–`09`. Zadanie: [`../zadanie.txt`](../zadanie.txt).
   …
 ```
 
-**Pravidlo:** web ani Action nevolajú OpenAI/MCP priamo — len Railway API.
+**Pravidlo:** web ani Action nevolajú LLM/MCP priamo — len Railway API.
 
 ---
 
-## 2. LLM — ChatGPT (OpenAI)
+## 2. LLM — pluggable provider (default GPT)
 
 | Položka | Hodnota |
 |---------|---------|
-| Provider | **OpenAI** |
-| Model (default) | `gpt-4o-mini` (lacný, dostatočný na README + Mermaid) |
-| Override | env `OPENAI_MODEL` (konfigurovateľné) |
-| Secret | `OPENAI_API_KEY` len na **Railway** (nie v Action pre generate) |
+| Factory | `createLlmProvider()` — env `DOCWRIGHT_LLM_PROVIDER` |
+| Default | `openai` — public OpenAI, alebo **Azure** ak je `AZURE_OPENAI_ENDPOINT` |
+| Ďalšie | `azure` (vynútiť), `openai-compatible` (`OPENAI_BASE_URL`) |
+| Public model | `OPENAI_MODEL` default `gpt-4o-mini` |
+| Azure | `AZURE_OPENAI_*` + Responses API (`DOCWRIGHT_LLM_API`) |
+| Secret | `OPENAI_API_KEY` (+ Azure vars) len na **Railway** (nie v Action) |
 
-Správanie podľa [`05`](./05-readme-a-architecture-map.md): **1 pass** + Mermaid-only retry.  
-Ingest: Agent + MCP na Railway ([`04`](./04-ziskanie-obsahu-github.md)).
+Detail: [`packages/core/src/llm/README.md`](../packages/core/src/llm/README.md).  
+Správanie podľa [`05`](./05-readme-a-architecture-map.md): agent loop + Mermaid repair.  
+Ingest: MCP provider na Railway ([`04`](./04-ziskanie-obsahu-github.md)).
 
 ### Limit na LLM (povinné — nie plná prevádzka)
 
@@ -158,7 +162,7 @@ jobs:
 
 | Miesto | Úloha |
 |--------|--------|
-| **Railway** | **Povinné:** GitHub MCP + AI agent + OpenAI — každý generate z webu/API/Action |
+| **Railway** | **Povinné:** MCP provider + AI agent + LLM — každý generate z webu/API/Action |
 | GitHub Pages | Len UI |
 | Action runner | Len HTTP klient + PR komentár |
 | Cursor (optional) | Lokálny vývoj / demo s MCP — nie náhrada Railway |
@@ -177,7 +181,7 @@ Framework: **Vitest**. Cieľ: *Tests From The Spec* — nie full E2E všetkého.
 |------|---------|
 | Parse `owner/repo` a GitHub URL | `04` / `08` |
 | Agent volá MCP tools v poradí tree → files (mock MCP) | `04` |
-| Limity `max_files_read` / truncate | `04` |
+| Limity `maxFilesRead` / truncate | `04` / `config/agent.json` |
 | Template: všetky default placeholdery sa dajú vyplniť | `05` |
 | Mermaid retry → fallback text ak nevalidné | `05` |
 | Merge faktov: mock starý README → nový výstup obsahuje kľúčový fakt | `05` |
@@ -232,7 +236,7 @@ SK variant (ak `output_language=sk` / UI SK):
 ## 10. Acceptance (tento dokument)
 
 - [ ] Repo štruktúra podľa §1
-- [ ] OpenAI ChatGPT (`gpt-4o-mini` default) + limity tokenov/timeout
+- [ ] LLM provider (`openai` default / Azure / compatible) + limity tokenov/timeout
 - [ ] Rate limit na verejnom API (IP)
 - [ ] Web + API error stavy podľa §4
 - [ ] Example workflow na inštaláciu Action (§5)
@@ -249,13 +253,14 @@ SK variant (ak `output_language=sk` / UI SK):
 
 | # | Rozhodnutie |
 |---|-------------|
-| 1 | Stack: **TS + Vite web + Node API + packages/core + MCP na Railway** |
-| 2 | LLM: **OpenAI ChatGPT**, default `gpt-4o-mini` |
+| 1 | Stack: **TS + Vite (plain TS) web + Hono API + packages/core + MCP na Railway** |
+| 2 | LLM: **pluggable** (`openai` / `azure` / `openai-compatible`); default GPT / Azure podľa env |
 | 3 | Rate limit: áno (IP), bez loginu |
 | 4 | Chyby/UX: tabuľka §4 |
 | 5 | Health endpoint: **nie** |
 | 6 | Action: workflow + `DOCWRIGHT_API_URL` / `DOCWRIGHT_API_KEY` |
 | 7 | **Agent + MCP beží na Railway** (web + API + Action generate) |
-| 8 | Testy: Vitest, základné zo spec |
-| 9 | Prevádzka: nie; LLM limity áno |
-| 10 | Disclaimer: krátky text §9 |
+| 8 | MCP: **provider registry** (default `github`); výber podľa URL hostu |
+| 9 | Testy: Vitest, základné zo spec |
+| 10 | Prevádzka: nie; LLM limity áno |
+| 11 | Disclaimer: krátky text §9 |

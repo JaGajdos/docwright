@@ -14,8 +14,8 @@ Architektúra: Agent + GitHub MCP beží na **Railway** ([`04`](./04-ziskanie-ob
                       ▼ POST /v1/generate
                  Railway
                  ├── apps/api (HTTP)
-                 ├── AI agent (OpenAI)
-                 └── GitHub MCP (github/github-mcp-server)
+                 ├── AI agent (LLM provider: openai / azure / …)
+                 └── MCP provider (default: github stdio)
                       │
   GH Action ──────────┘  (volá API, potom sticky PR comment)
 ```
@@ -44,16 +44,27 @@ Architektúra: Agent + GitHub MCP beží na **Railway** ([`04`](./04-ziskanie-ob
 
 | Premenná | Povinné | Popis |
 |----------|---------|--------|
-| `OPENAI_API_KEY` | Áno | ChatGPT API |
-| `OPENAI_MODEL` | Nie | Default `gpt-4o-mini` |
-| `GITHUB_TOKEN` | Áno | PAT alebo fine-grained token pre MCP (public repo read; vyšší rate limit) |
+| `OPENAI_API_KEY` | Áno | OpenAI / Azure / compatible API key |
+| `DOCWRIGHT_LLM_PROVIDER` | Nie | `openai` (default) \| `azure` \| `openai-compatible` — [`llm/README`](../packages/core/src/llm/README.md) |
+| `AZURE_OPENAI_ENDPOINT` | Azure | Ak nastavené + provider `openai`/`azure` → Azure Responses |
+| `AZURE_OPENAI_API_VERSION` | Azure | napr. `2025-04-01-preview` |
+| `AZURE_OPENAI_DEPLOYMENT` | Azure | deployment name |
+| `DOCWRIGHT_LLM_API` | Nie | `chat` \| `responses` (Azure default `responses`) |
+| `OPENAI_MODEL` | Nie | Len public OpenAI / compatible; default `gpt-4o-mini` |
+| `OPENAI_BASE_URL` | Nie | Pre `openai-compatible` (Ollama, Groq, …) |
+| `GITHUB_TOKEN` | Áno | PAT pre GitHub MCP (public repo read) |
+| `DOCWRIGHT_MCP_PROVIDER` | Nie | Default `github` — výber aj podľa hostu URL |
+| `DOCWRIGHT_MCP_COMMAND` / `ARGS` | Nie | Override spawn MCP binárky |
 | `DOCWRIGHT_API_KEY` | Áno | Key pre Action / externé volania (nie pre browser) |
 | `CORS_ORIGINS` | Áno | Presná Pages URL, napr. `https://<user>.github.io` |
-| `DOCWRIGHT_MAX_FILES_READ` | Nie | Default 25 |
-| `DOCWRIGHT_MAX_FILE_BYTES` | Nie | Default 100000 |
+| `DOCWRIGHT_MAX_FILES_READ` | Nie | Default **8** (`config/agent.json`) |
+| `DOCWRIGHT_MAX_FILE_BYTES` | Nie | Default **40000** |
+| `DOCWRIGHT_MAX_TOOL_ROUNDS` | Nie | Default **8** |
 | `DOCWRIGHT_RATE_LIMIT_PER_HOUR` | Nie | Default 5 |
 | `DOCWRIGHT_RATE_LIMIT_PER_DAY` | Nie | Default 20 |
 | `PORT` | Auto | Railway nastaví |
+
+Limity + prompty: [`config/`](../config/) — detail v [`12`](./12-instalacna-prirucka.md).
 
 ### 2.4 GitHub token pre MCP (ako vytvoriť)
 1. GitHub → **Settings → Developer settings → Personal access tokens**.

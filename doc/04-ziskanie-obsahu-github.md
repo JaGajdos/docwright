@@ -24,14 +24,16 @@ Web a Public API volajú ten istý agent+MCP stack. Nie je to len Cursor demo.
 ## 2. Scope
 
 ### In scope
-- Oficiálny **GitHub MCP** + **AI agent** na Railway
-- Agent: `get_repository_tree` → výber súborov → `get_file_contents` (limity)
+- Oficiálny **GitHub MCP** (default provider) + **AI agent** na Railway
+- **MCP provider registry** — výber podľa hostu URL / `DOCWRIGHT_MCP_PROVIDER` / `mcpProvider` v API
+- Agent: `get_repository_tree` → výber súborov → `get_file_contents` (limity z `config/agent.json`)
 - Výstup kontextu do generate ([`05`](./05-readme-a-architecture-map.md))
 
 ### Out of scope
 - Privátne repá
 - Quality / security scannery
 - Ingest **bez** MCP na web/API path (REST-only generate pre produkt = zakázané)
+- Ďalšie VCS MCP backendy (GitLab, …) — registry API áno, implementácia mimo MVP
 
 ---
 
@@ -81,16 +83,35 @@ POST /v1/generate  (Railway)
 
 ## 6. Default limity (konfigurovateľné)
 
-| Parameter | Default | Účel |
-|-----------|---------|------|
-| `max_files_read` | **25** | Max `get_file_contents` |
-| `max_file_bytes` | **100_000** | Truncate / skip |
-| `max_total_bytes` | **800_000** | Soft cap kontextu |
-| `tree_recursive` | **true** | File tree |
+Zdroj pravdy: [`config/agent.json`](../config/agent.json) + env `DOCWRIGHT_MAX_*`  
+(priorita: call override → env → `agent.json` → hard defaults v `packages/core`).
 
-Priorita súborov: README/LICENSE → manifests → entry points → ostatné.
+| Parameter | Default | Env |
+|-----------|---------|-----|
+| `maxFilesRead` | **8** | `DOCWRIGHT_MAX_FILES_READ` |
+| `maxFileBytes` | **40_000** | `DOCWRIGHT_MAX_FILE_BYTES` |
+| `maxTotalBytes` | **200_000** | `DOCWRIGHT_MAX_TOTAL_BYTES` |
+| `maxToolRounds` | **8** | `DOCWRIGHT_MAX_TOOL_ROUNDS` |
+| `treeRecursive` | **true** | `DOCWRIGHT_TREE_RECURSIVE` |
+| `maxArchitectureNodes` | **12** | `DOCWRIGHT_MAX_ARCHITECTURE_NODES` |
+| `maxToolResultChars` | **12_000** | `DOCWRIGHT_MAX_TOOL_RESULT_CHARS` |
+| `maxFileToolsPerRound` | **3** | `DOCWRIGHT_MAX_FILE_TOOLS_PER_ROUND` |
 
-Env príklady: `DOCWRIGHT_MAX_FILES_READ`, …
+Priorita súborov: README/LICENSE → manifests → entry points → ostatné.  
+Veľké tree výsledkov sa truncujú (priority paths first).
+
+---
+
+## 6b. MCP providery (pluggable)
+
+Ingest ide cez **MCP provider registry** (`packages/core/src/mcp/`):
+
+1. Explicitné `mcpProvider` v requeste / `DOCWRIGHT_MCP_PROVIDER`
+2. Inak výber podľa **hostu z repo URL** (`owner/repo` → `github.com`)
+3. Default: **`github`** (oficiálny GitHub MCP)
+
+Ďalšie backendy (GitLab, …): `registerMcpProvider({ id, hosts, createSession })` — pozri [`packages/core/src/mcp/README.md`](../packages/core/src/mcp/README.md).  
+MVP implementuje len GitHub; `parseRepoInput` zatiaľ akceptuje len github.com.
 
 ---
 

@@ -97,10 +97,11 @@ Browser (no login) → Web (same origin) → Backend generate
 
 ```
 User  →  GitHub Pages (frontend)  →  Railway POST /v1/generate
-                                         →  Agent + GitHub MCP + OpenAI
+                                         →  Agent + MCP provider + LLM provider
 User  ←  README + architecture na stránke
 ```
 
+- Frontend: **Vite + plain TypeScript** (nie React)
 - dependency `mermaid` — render architecture map ([`11`](./11-implementacne-rozhodnutia.md))
 - README panel: markdown render (napr. `marked` + DOMPurify)
 
@@ -110,8 +111,8 @@ User  ←  README + architecture na stránke
 
 | Časť | Kde |
 |------|-----|
-| Frontend (tento UX) | **GitHub Pages** |
-| Backend | **Railway** — Agent + GitHub MCP + OpenAI ([`09`](./09-nasadenie.md)) |
+| Frontend (tento UX) | **GitHub Pages** (Vite build) |
+| Backend | **Railway** — Agent + MCP + LLM ([`09`](./09-nasadenie.md)) |
 | PR komentár | GitHub Action → volá Railway |
 
 Pages **sama** nestačí — backend musí bežať inde.

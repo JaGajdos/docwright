@@ -12,7 +12,7 @@ Nadväzuje na [`04`](./04-ziskanie-obsahu-github.md) (Agent+MCP) + [`05`](./05-r
 
 | Bod | Význam |
 |-----|--------|
-| Public API | `POST /v1/generate` na **Railway** = Agent + MCP + OpenAI |
+| Public API | `POST /v1/generate` na **Railway** = Agent + MCP provider + LLM provider |
 | Web app | Klient API — URL → README + mapa ([`08`](./08-web-app.md)) |
 | GitHub Action | Sticky PR komentár; generate cez **volanie Railway API** |
 
@@ -48,9 +48,13 @@ Content-Type: application/json
   "repo": "owner/name",
   "ref": "main",
   "language": "en",
+  "mcpProvider": "github",
   "limits": { }
 }
 ```
+
+`mcpProvider` je voliteľné — default z `DOCWRIGHT_MCP_PROVIDER` / hostu URL (GitHub).  
+`language` = výstupný jazyk dokumentácie (`en` / `sk`, …).
 
 **Sync**, timeout ~60–120 s.
 
